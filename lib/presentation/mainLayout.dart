@@ -29,9 +29,9 @@ class _MainLayoutState extends State<MainLayout> {
       appBar: AppBar(
         backgroundColor: Colors.white,
         title: SizedBox(
-          height: 70,
+          height: 45,
           child: Image.asset(
-            'assets/images/athletezone-logo.png',
+            'assets/images/athletezone-logo-mini.png',
             fit: BoxFit.contain,
           ),
         ),
@@ -75,3 +75,4 @@ class _MainLayoutState extends State<MainLayout> {
     );
   }
 }
+

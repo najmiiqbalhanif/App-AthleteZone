@@ -56,11 +56,6 @@ flutter:
   # included with your application, so that you can use the icons in
   # the material Icons class.
   uses-material-design: true
-  assets:
-    - assets/images/pegasus.jpeg
-
-<<<<<<< HEAD
-=======
   # To add assets to your application, add an assets section, like this:
   assets:
     - assets/images/
@@ -94,4 +89,3 @@ flutter:
   #
   # For details regarding fonts from package dependencies,
   # see https://flutter.dev/to/font-from-package
->>>>>>> 7ab9637332de10fe2dcb2cbd667ed3fcf022a1ee

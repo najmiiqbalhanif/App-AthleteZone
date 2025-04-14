@@ -65,6 +65,49 @@ class HomePage extends StatelessWidget {
               const SizedBox(height: 24),
               const BigPromoBanner(),
               const SizedBox(height: 24), // Tambahan agar tidak terlalu mepet dengan bottom navbar
+
+              const SizedBox(height: 40), // Jarak atas
+              Center(
+                child: Column(
+                  children: [
+                    OutlinedButton(
+                      style: OutlinedButton.styleFrom(
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(30.0),
+                        ),
+                        side: const BorderSide(color: Colors.black),
+                        padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                      ),
+                      onPressed: () {
+                        // Aksi saat tombol ditekan
+                      },
+                      child: const Text(
+                        'Lihat Selengkapnya',
+                        style: TextStyle(
+                          color: Colors.black,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 32),
+                    Image.asset(
+                      'assets/images/athletezone-logo-mini.png', // pastikan file ini ada di folder assets/images
+                      width: 40,
+                      height: 40,
+                    ),
+                    const SizedBox(height: 10),
+                    const Text(
+                      'Terima kasih telah bergabung bersama kami.',
+                      style: TextStyle(
+                        fontSize: 16,
+                        color: Colors.black,
+                      ),
+                      textAlign: TextAlign.center,
+                    ),
+                    const SizedBox(height: 40), // Jarak bawah agar tidak terlalu mentok
+                  ],
+                ),
+              ),
             ],
           ),
         ),

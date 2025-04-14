@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'presentation/mainLayout.dart';
+import 'presentation/pages/login.dart'; // arahkan ke LoginPage, bukan MainLayout
 
 void main() => runApp(const MyApp());
 
@@ -9,15 +9,16 @@ class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      home: MainLayout(), // MainLayout sebagai root
+      debugShowCheckedModeBanner: false, // opsional: untuk menghilangkan banner DEBUG
+      home: const LoginPage(), // ✅ Ganti MainLayout dengan LoginPage
       title: 'AthleteZone',
       theme: ThemeData(
         bottomNavigationBarTheme: BottomNavigationBarThemeData(
-          selectedItemColor: Color(0xFF06207C), // Contoh warna kustom
+          selectedItemColor: const Color(0xFF06207C),
           unselectedItemColor: Colors.grey[600],
           backgroundColor: Colors.white,
-          selectedLabelStyle: TextStyle(fontWeight: FontWeight.bold),
-        )
+          selectedLabelStyle: const TextStyle(fontWeight: FontWeight.bold),
+        ),
       ),
     );
   }

@@ -99,7 +99,7 @@ class HomePage extends StatelessWidget {
                     const Text(
                       'Terima kasih telah bergabung bersama kami.',
                       style: TextStyle(
-                        fontSize: 16,
+                        fontSize: 14,
                         color: Colors.black,
                       ),
                       textAlign: TextAlign.center,

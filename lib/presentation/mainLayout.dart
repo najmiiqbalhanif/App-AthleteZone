@@ -58,7 +58,7 @@ class _MainLayoutState extends State<MainLayout> {
           BottomNavigationBarItem(
             icon: Icon(Icons.receipt_long_outlined),
             activeIcon: Icon(Icons.receipt_long),
-            label: 'Order',
+            label: 'Orders',
           ),
           BottomNavigationBarItem(
             icon: Icon(Icons.shopping_cart_outlined),

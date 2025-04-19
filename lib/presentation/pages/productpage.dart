@@ -41,16 +41,6 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
     'assets/images/shoes3.png',
   ];
 
-  // Bottom navigation
-  int _selectedBottomNavIndex = 0;
-
-  void _onBottomNavTap(int index) {
-    setState(() {
-      _selectedBottomNavIndex = index;
-    });
-    // Aksi lain sesuai kebutuhan (navigasi halaman dsb.)
-  }
-
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -337,28 +327,7 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
       ),
 
       // Bottom Navigation Bar
-      bottomNavigationBar: BottomNavigationBar(
-        currentIndex: _selectedBottomNavIndex,
-        onTap: _onBottomNavTap,
-        items: const [
-          BottomNavigationBarItem(
-            icon: Icon(Icons.store),
-            label: 'Shop',
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.favorite_border),
-            label: 'Favorites',
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.shopping_bag),
-            label: 'Bag',
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.person),
-            label: 'Profile',
-          ),
-        ],
-      ),
+
     );
   }
 }

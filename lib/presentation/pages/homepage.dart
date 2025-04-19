@@ -12,7 +12,7 @@ class HomePage extends StatelessWidget {
         backgroundColor: Colors.white,
         elevation: 0,
         title: const Text(
-          "Good Morning, Azzuro",
+          "Welcome, Hanif",
           style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold, color: Colors.black),
         ),
       ),

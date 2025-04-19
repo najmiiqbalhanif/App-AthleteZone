@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'pages/homepage.dart';
 import 'pages/shoppage.dart';
-import 'pages/favoritespage.dart';
+import 'pages/ordersPage.dart';
 import 'pages/cartpage.dart';
 import 'pages/profilepage.dart';
 
@@ -18,7 +18,7 @@ class _MainLayoutState extends State<MainLayout> {
   final List<Widget> _pages = [
     const HomePage(),       // Halaman 0 - Home
     const ShopPage(),       // Halaman 1 - Shop
-    const FavoritesPage(),  // Halaman 2 - Favorites
+    const OrdersPage(),  // Halaman 2 - Favorites
     const CartPage(),        // Halaman 3 - Bag
     const ProfilePage(),    // Halaman 4 - Profile
   ];
@@ -56,9 +56,9 @@ class _MainLayoutState extends State<MainLayout> {
             label: 'Shop',
           ),
           BottomNavigationBarItem(
-            icon: Icon(Icons.favorite_outline),
-            activeIcon: Icon(Icons.favorite),
-            label: 'Favorites',
+            icon: Icon(Icons.receipt_long_outlined),
+            activeIcon: Icon(Icons.receipt_long),
+            label: 'Order',
           ),
           BottomNavigationBarItem(
             icon: Icon(Icons.shopping_cart_outlined),

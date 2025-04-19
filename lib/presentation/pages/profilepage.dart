@@ -77,10 +77,10 @@ class ProfilePage extends StatelessWidget {
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.spaceAround,
                 children: const [
-                  _MenuItem(icon: Icons.shopping_bag_outlined, label: 'Pesanan'),
-                  _MenuItem(icon: Icons.qr_code, label: 'Akses'),
-                  _MenuItem(icon: Icons.event, label: 'Acara'),
-                  _MenuItem(icon: Icons.settings, label: 'Pengaturan'),
+                  _MenuItem(icon: Icons.favorite, label: 'Favorite'),
+                  _MenuItem(icon: Icons.qr_code, label: 'Access'),
+                  _MenuItem(icon: Icons.event, label: 'Event'),
+                  _MenuItem(icon: Icons.settings, label: 'Settings'),
                 ],
               ),
             ),
@@ -91,8 +91,8 @@ class ProfilePage extends StatelessWidget {
             const Padding(
               padding: EdgeInsets.symmetric(horizontal: 16.0),
               child: ListTile(
-                title: Text('Hadiah Anggota Nike Anda'),
-                subtitle: Text('Tersedia 2'),
+                title: Text('Present from your nike member'),
+                subtitle: Text('Available 2'),
                 trailing: Icon(Icons.chevron_right),
               ),
             ),

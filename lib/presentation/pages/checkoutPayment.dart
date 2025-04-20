@@ -90,33 +90,36 @@ class _CheckoutPageState extends State<CheckoutPage> {
             setState(() => _currentStep -= 1);
           }
         },
-        controlsBuilder: (BuildContext context, ControlsDetails details) {
-          return Padding(
-            padding: const EdgeInsets.symmetric(vertical: 10.0),
-            child: Row(
-              children: [
-                ElevatedButton(
-                  onPressed: details.onStepContinue,
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.blue[900], // Dark blue for Continue button
-                  ),
-                  child: Text('Continue', style: TextStyle(color: Colors.white)),
-                ),
-                SizedBox(width: 20),
-                TextButton(
-                  onPressed: details.onStepCancel,
-                  child: Text(
-                    'Back',
-                    style: TextStyle(
-                      color: Colors.blue[900], // Dark blue for Back button
+          controlsBuilder: (BuildContext context, ControlsDetails details) {
+            final isLastStep = _currentStep == 2;
+
+            return Padding(
+              padding: const EdgeInsets.symmetric(vertical: 10.0),
+              child: Row(
+                children: [
+                  if (!isLastStep)
+                    ElevatedButton(
+                      onPressed: details.onStepContinue,
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.blue[900], // Dark blue for Continue button
+                      ),
+                      child: Text('Continue', style: TextStyle(color: Colors.white)),
+                    ),
+                  if (!isLastStep) SizedBox(width: 20),
+                  TextButton(
+                    onPressed: details.onStepCancel,
+                    child: Text(
+                      'Back',
+                      style: TextStyle(
+                        color: Colors.blue[900], // Dark blue for Back button
+                      ),
                     ),
                   ),
-                ),
-              ],
-            ),
-          );
-        },
-        steps: [
+                ],
+              ),
+            );
+          },
+          steps: [
           Step(
             title: Text("1. Delivery Options"),
             content: Form(
@@ -263,7 +266,7 @@ class _CheckoutPageState extends State<CheckoutPage> {
                 Align(
                   alignment: Alignment.centerRight,
                   child: Text(
-                    'Total: £104.95',
+                    'Total: Rp6.098.000',
                     style: TextStyle(
                       fontWeight: FontWeight.bold,
                       fontSize: 16,

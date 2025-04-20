@@ -1,4 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:helloworld/presentation/pages/ordersPage.dart';
+import 'package:helloworld/presentation/pages/profilepage.dart';
+
 
 void main() {
   runApp(MaterialApp(
@@ -63,7 +66,15 @@ class _CheckoutPageState extends State<CheckoutPage> {
             SizedBox(width: 20),
             Icon(Icons.shopping_cart_outlined, color: Colors.black),
             SizedBox(width: 20),
-            Icon(Icons.account_circle_outlined, color: Colors.black),
+            IconButton(
+              icon: Icon(Icons.account_circle_outlined, color: Colors.black),
+              onPressed: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (context) => ProfilePage()),
+                );
+              },
+            ),
           ],
         ),
       ),
@@ -270,7 +281,13 @@ class _CheckoutPageState extends State<CheckoutPage> {
                           content: Text("Thank you for your purchase!"),
                           actions: [
                             TextButton(
-                              onPressed: () => Navigator.pop(context),
+                              onPressed: () {
+                                Navigator.pop(context); // Tutup dialog dulu
+                                Navigator.push(
+                                  context,
+                                  MaterialPageRoute(builder: (context) => OrdersPage()),
+                                );
+                              },
                               child: Text("OK"),
                             ),
                           ],

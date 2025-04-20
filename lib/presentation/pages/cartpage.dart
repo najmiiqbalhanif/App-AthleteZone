@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:helloworld/presentation/pages/checkoutPayment.dart';
 
 class CartPage extends StatefulWidget {
   const CartPage({super.key});
@@ -55,7 +56,12 @@ class _CartPageState extends State<CartPage> {
                       backgroundColor: const Color(0xFF041761),
                       padding: const EdgeInsets.symmetric(vertical: 16),
                     ),
-                    onPressed: () {},
+                    onPressed: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(builder: (context) => CheckoutPage()),
+                      );
+                    },
                     child: const Text(
                       'Checkout',
                       style: TextStyle(

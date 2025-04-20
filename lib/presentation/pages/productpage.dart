@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'cartpage.dart';
 
 class ProductDetailPage extends StatefulWidget {
   final List<String> imageUrls;
@@ -196,7 +197,14 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
                   const SizedBox(width: 8),
                   Expanded(
                     child: ElevatedButton(
-                      onPressed: () {},
+                      onPressed: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => const CartPage(),
+                          ),
+                        );
+                      },
                       style: ElevatedButton.styleFrom(
                         backgroundColor: Colors.black,
                         foregroundColor: Colors.white,

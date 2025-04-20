@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'productpage.dart';
 
 class HomePage extends StatelessWidget {
   const HomePage({super.key});
@@ -37,26 +38,72 @@ class HomePage extends StatelessWidget {
                 child: SingleChildScrollView(
                   scrollDirection: Axis.horizontal,
                   child: Row(
-                    children: const [
-                      ProductCard(
-                        imageUrl: "assets/images/shoes1.png",
-                        title: "Jordan ADG 5",
-                        category: "Golf Shoes",
-                        price: "Rp 3.049.000",
-                      ),
-                      ProductCard(
-                        imageUrl: "assets/images/shoes2.png",
-                        title: "Nike ReactX Rejuven8",
-                        category: "Men's Shoes",
-                        price: "Rp 1.069.000",
-                      ),
-                      ProductCard(
-                        imageUrl: "assets/images/shoes3.png",
-                        title: "Nike Vapor Edge",
-                        category: "Men's Shoes",
-                        price: "Rp 3.980.000",
-                      ),
-                    ],
+                      children: [
+                        ProductCard(
+                          imageUrl: "assets/images/shoes1.png",
+                          title: "Jordan ADG 5",
+                          category: "Golf Shoes",
+                          price: "Rp 3.049.000",
+                          onTap: () {
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (context) => ProductDetailPage(
+                                  imageUrls: [
+                                    "assets/images/shoes1.png"
+                                  ], // atau bisa lebih dari 1 kalau kamu punya
+                                  title: "Jordan ADG 5",
+                                  category: "Golf Shoes",
+                                  price: "Rp 3.049.000",
+                                ),
+                              ),
+                            );
+                          },
+                        ),
+                        ProductCard(
+                          imageUrl: "assets/images/shoes2.png",
+                          title: "Nike Air Max 270",
+                          category: "Lifestyle Shoes",
+                          price: "Rp 2.099.000",
+                          onTap: () {
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (context) => ProductDetailPage(
+                                  imageUrls: [
+                                    "assets/images/shoes2.png"
+                                  ],
+                                  title: "Nike Air Max 270",
+                                  category: "Lifestyle Shoes",
+                                  price: "Rp 2.099.000",
+                                ),
+                              ),
+                            );
+                          },
+                        ),
+
+                        ProductCard(
+                          imageUrl: "assets/images/shoes3.png",
+                          title: "Nike ZoomX Vaporfly",
+                          category: "Running Shoes",
+                          price: "Rp 3.499.000",
+                          onTap: () {
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (context) => ProductDetailPage(
+                                  imageUrls: [
+                                    "assets/images/shoes3.png"
+                                  ],
+                                  title: "Nike ZoomX Vaporfly",
+                                  category: "Running Shoes",
+                                  price: "Rp 3.499.000",
+                                ),
+                              ),
+                            );
+                          },
+                        ),
+                      ]
                   ),
                 ),
               ),
@@ -121,6 +168,7 @@ class ProductCard extends StatelessWidget {
   final String title;
   final String category;
   final String price;
+  final VoidCallback onTap; // Tambahkan ini
 
   const ProductCard({
     super.key,
@@ -128,46 +176,51 @@ class ProductCard extends StatelessWidget {
     required this.title,
     required this.category,
     required this.price,
+    required this.onTap, // Tambahkan ini
   });
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      width: 150,
-      margin: const EdgeInsets.only(right: 16),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          ClipRRect(
-            borderRadius: BorderRadius.circular(12),
-            child: Image.asset(
-              imageUrl,
-              width: 150,
-              height: 171,
-              fit: BoxFit.cover,
+    return GestureDetector(
+      onTap: onTap, // Tambahkan ini
+      child: Container(
+        width: 150,
+        margin: const EdgeInsets.only(right: 16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            ClipRRect(
+              borderRadius: BorderRadius.circular(12),
+              child: Image.asset(
+                imageUrl,
+                width: 150,
+                height: 171,
+                fit: BoxFit.cover,
+              ),
             ),
-          ),
-          const SizedBox(height: 8),
-          Text(
-            title,
-            style: const TextStyle(fontWeight: FontWeight.bold),
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
-          ),
-          Text(
-            category,
-            style: const TextStyle(color: Colors.grey, fontSize: 12),
-          ),
-          const SizedBox(height: 4),
-          Text(
-            price,
-            style: const TextStyle(fontWeight: FontWeight.bold),
-          ),
-        ],
+            const SizedBox(height: 8),
+            Text(
+              title,
+              style: const TextStyle(fontWeight: FontWeight.bold),
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+            ),
+            Text(
+              category,
+              style: const TextStyle(color: Colors.grey, fontSize: 12),
+            ),
+            const SizedBox(height: 4),
+            Text(
+              price,
+              style: const TextStyle(fontWeight: FontWeight.bold),
+            ),
+          ],
+        ),
       ),
     );
   }
 }
+
 
 class PromoCarousel extends StatefulWidget {
   const PromoCarousel({super.key});

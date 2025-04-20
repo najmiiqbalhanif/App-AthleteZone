@@ -1,61 +1,39 @@
 import 'package:flutter/material.dart';
 
-void main() {
-  runApp(const MyApp());
-}
-
-class MyApp extends StatelessWidget {
-  const MyApp({Key? key}) : super(key: key);
-
-  @override
-  Widget build(BuildContext context) {
-    return MaterialApp(
-      title: 'E-Commerce Detail',
-      debugShowCheckedModeBanner: false,
-      theme: ThemeData(
-        // Gunakan Material 3 agar textTheme-nya sesuai versi Flutter baru
-        useMaterial3: true,
-        colorScheme: ColorScheme.fromSeed(seedColor: Colors.blue),
-      ),
-      home: const ProductDetailPage(),
-    );
-  }
-}
-
 class ProductDetailPage extends StatefulWidget {
-  const ProductDetailPage({Key? key}) : super(key: key);
+  final List<String> imageUrls;
+  final String title;
+  final String category;
+  final String price;
+
+  const ProductDetailPage({
+    Key? key,
+    required this.imageUrls,
+    required this.title,
+    required this.category,
+    required this.price,
+  }) : super(key: key);
 
   @override
   State<ProductDetailPage> createState() => _ProductDetailPageState();
 }
 
 class _ProductDetailPageState extends State<ProductDetailPage> {
-  // Untuk PageView gambar
   final PageController _pageController = PageController();
   int _currentPage = 0;
-
-  // Gambar contoh (ganti dengan gambar Anda sendiri)
-  final List<String> _productImages = [
-    'assets/images/shoes1.png',
-    'assets/images/shoes2.png',
-    'assets/images/shoes3.png',
-  ];
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      // AppBar bisa disesuaikan, misal pakai IconButton untuk back, share, dsb.
+      backgroundColor: Colors.white,
       appBar: AppBar(
-        title: const Text("Nike Air Force 1 '07"),
+        title: Text(widget.title),
         backgroundColor: Colors.white,
         elevation: 0,
         foregroundColor: Colors.black,
-        // Bisa tambahkan action icon (share, dsb.) di sini jika perlu
         actions: [
           IconButton(
-            onPressed: () {
-              // Aksi share dsb.
-            },
+            onPressed: () {},
             icon: const Icon(Icons.share),
           ),
         ],
@@ -64,12 +42,12 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Bagian Carousel Gambar Produk
+            // Carousel
             SizedBox(
               height: 300,
               child: PageView.builder(
                 controller: _pageController,
-                itemCount: _productImages.length,
+                itemCount: widget.imageUrls.length,
                 onPageChanged: (index) {
                   setState(() {
                     _currentPage = index;
@@ -77,20 +55,19 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
                 },
                 itemBuilder: (context, index) {
                   return Image.asset(
-                    _productImages[index],
+                    widget.imageUrls[index],
                     fit: BoxFit.cover,
                   );
                 },
               ),
             ),
 
-            // Dots indicator
             const SizedBox(height: 8),
             Center(
               child: Row(
                 mainAxisSize: MainAxisSize.min,
                 children: List.generate(
-                  _productImages.length,
+                  widget.imageUrls.length,
                       (index) => AnimatedContainer(
                     duration: const Duration(milliseconds: 300),
                     margin: const EdgeInsets.symmetric(horizontal: 4),
@@ -107,22 +84,22 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
 
             const SizedBox(height: 16),
 
-            // Nama Produk
+            // Title
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 16.0),
               child: Text(
-                "Nike Air Force 1 '07",
+                widget.title,
                 style: Theme.of(context).textTheme.titleLarge?.copyWith(
                   fontWeight: FontWeight.bold,
                 ),
               ),
             ),
 
-            // Kategori/Deskripsi Singkat
+            // Category
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 16.0),
               child: Text(
-                "Men's Shoes",
+                widget.category,
                 style: Theme.of(context).textTheme.titleMedium?.copyWith(
                   color: Colors.grey[700],
                 ),
@@ -131,11 +108,11 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
 
             const SizedBox(height: 8),
 
-            // Harga
+            // Price
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 16.0),
               child: Text(
-                "Rp 1.549.000",
+                widget.price,
                 style: Theme.of(context).textTheme.titleMedium?.copyWith(
                   fontWeight: FontWeight.bold,
                   fontSize: 18,
@@ -145,41 +122,30 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
 
             const SizedBox(height: 16),
 
-            // Pilihan Warna / Variasi
+            // Color options
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 16.0),
               child: Row(
                 children: [
-                  // Warna Putih
                   _ColorOption(
                     color: Colors.white,
                     isSelected: _currentPage == 0,
                     onTap: () {
-                      setState(() {
-                        _pageController.jumpToPage(0);
-                      });
+                      _pageController.jumpToPage(0);
                     },
                   ),
                   const SizedBox(width: 8),
-
-                  // Warna Hitam
                   _ColorOption(
                     color: Colors.black,
                     isSelected: _currentPage == 1,
                     onTap: () {
-                      setState(() {
-                        _pageController.jumpToPage(1);
-                      });
+                      _pageController.jumpToPage(1);
                     },
                   ),
                   const SizedBox(width: 8),
-
-                  // Custom
                   GestureDetector(
                     onTap: () {
-                      setState(() {
-                        _pageController.jumpToPage(2);
-                      });
+                      _pageController.jumpToPage(2);
                     },
                     child: Container(
                       padding: const EdgeInsets.symmetric(
@@ -211,16 +177,14 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
 
             const SizedBox(height: 16),
 
-            // Contoh row untuk 3 tombol: Select Size, Add to Bag, Favorite
+            // Action Buttons
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 16.0),
               child: Row(
                 children: [
                   Expanded(
                     child: OutlinedButton(
-                      onPressed: () {
-                        // Aksi pilih size
-                      },
+                      onPressed: () {},
                       style: OutlinedButton.styleFrom(
                         foregroundColor: Colors.black,
                         side: const BorderSide(color: Colors.black),
@@ -232,9 +196,7 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
                   const SizedBox(width: 8),
                   Expanded(
                     child: ElevatedButton(
-                      onPressed: () {
-                        // Aksi tambahkan ke keranjang
-                      },
+                      onPressed: () {},
                       style: ElevatedButton.styleFrom(
                         backgroundColor: Colors.black,
                         foregroundColor: Colors.white,
@@ -246,9 +208,7 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
                   const SizedBox(width: 8),
                   Expanded(
                     child: OutlinedButton(
-                      onPressed: () {
-                        // Aksi favorite
-                      },
+                      onPressed: () {},
                       style: OutlinedButton.styleFrom(
                         foregroundColor: Colors.black,
                         side: const BorderSide(color: Colors.black),
@@ -263,7 +223,7 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
 
             const SizedBox(height: 16),
 
-            // Informasi tambahan (sesuai screenshot)
+            // Info, Description, Details
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 16.0),
               child: Text(
@@ -273,10 +233,7 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
                 ),
               ),
             ),
-
             const SizedBox(height: 16),
-
-            // Deskripsi panjang
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 16.0),
               child: Text(
@@ -288,10 +245,7 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
                 ),
               ),
             ),
-
             const SizedBox(height: 16),
-
-            // Informasi detail
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 16.0),
               child: Text(
@@ -301,16 +255,11 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
                 style: Theme.of(context).textTheme.bodyMedium,
               ),
             ),
-
             const SizedBox(height: 16),
-
-            // Tombol "View Product Details" (contoh)
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 16.0),
               child: InkWell(
-                onTap: () {
-                  // Aksi menuju detail lebih lengkap
-                },
+                onTap: () {},
                 child: Text(
                   "View Product Details",
                   style: Theme.of(context).textTheme.bodyMedium?.copyWith(
@@ -320,19 +269,14 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
                 ),
               ),
             ),
-
             const SizedBox(height: 32),
           ],
         ),
       ),
-
-      // Bottom Navigation Bar
-
     );
   }
 }
 
-// Widget kecil untuk pilihan warna
 class _ColorOption extends StatelessWidget {
   final Color color;
   final bool isSelected;

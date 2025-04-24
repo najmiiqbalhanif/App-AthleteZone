@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:helloworld/presentation/pages/ordersPage.dart';
 import 'package:helloworld/presentation/pages/profilepage.dart';
 
-
 void main() {
   runApp(MaterialApp(
     home: CheckoutPage(),
@@ -10,19 +9,19 @@ void main() {
     theme: ThemeData(
       primarySwatch: Colors.blue,
       colorScheme: ColorScheme.light(
-        primary: Colors.blue, // Stepper active color and borders
-        onPrimary: Colors.white, // Text color for primary color buttons
-        secondary: Colors.blue, // Color for radio, checkboxes, etc.
+        primary: Colors.blue,
+        onPrimary: Colors.white,
+        secondary: Colors.blue,
       ),
       elevatedButtonTheme: ElevatedButtonThemeData(
         style: ElevatedButton.styleFrom(
-          backgroundColor: Colors.blue[900], // Dark blue for button background
+          backgroundColor: Colors.blue[900],
         ),
       ),
       outlinedButtonTheme: OutlinedButtonThemeData(
         style: OutlinedButton.styleFrom(
-          side: BorderSide(color: Colors.blue[900]!), // Dark blue border for outlined buttons
-          foregroundColor: Colors.blue[900], // Text color for outlined button
+          side: BorderSide(color: Colors.blue[900]!),
+          foregroundColor: Colors.blue[900],
         ),
       ),
     ),
@@ -36,14 +35,21 @@ class CheckoutPage extends StatefulWidget {
 
 class _CheckoutPageState extends State<CheckoutPage> {
   int _currentStep = 0;
-
   final _formKey = GlobalKey<FormState>();
+
   String firstName = '';
   String lastName = '';
   String address = '';
   String email = '';
   String phone = '';
   String? _selectedPaymentMethod = 'credit';
+
+  bool isDelivery = true;
+  String? selectedLocation;
+  String? selectedTime;
+
+  List<String> pickupLocations = ['Bandung Store', 'Jakarta Store'];
+  List<String> pickupTimes = ['10:00 AM', '1:00 PM', '4:00 PM'];
 
   @override
   Widget build(BuildContext context) {
@@ -53,14 +59,12 @@ class _CheckoutPageState extends State<CheckoutPage> {
         elevation: 1,
         title: Row(
           children: [
-            Text(
-              "AthleteZone",
-              style: TextStyle(
-                color: Colors.black,
-                fontWeight: FontWeight.bold,
-                fontSize: 18,
-              ),
-            ),
+            Text("AthleteZone",
+                style: TextStyle(
+                  color: Colors.black,
+                  fontWeight: FontWeight.bold,
+                  fontSize: 18,
+                )),
             Spacer(),
             Icon(Icons.search, color: Colors.black),
             SizedBox(width: 20),
@@ -81,8 +85,10 @@ class _CheckoutPageState extends State<CheckoutPage> {
       body: Stepper(
         currentStep: _currentStep,
         onStepContinue: () {
-          if (_currentStep < 2) {
-            setState(() => _currentStep += 1);
+          if (_formKey.currentState!.validate()) {
+            if (_currentStep < 2) {
+              setState(() => _currentStep += 1);
+            }
           }
         },
         onStepCancel: () {
@@ -90,36 +96,30 @@ class _CheckoutPageState extends State<CheckoutPage> {
             setState(() => _currentStep -= 1);
           }
         },
-          controlsBuilder: (BuildContext context, ControlsDetails details) {
-            final isLastStep = _currentStep == 2;
-
-            return Padding(
-              padding: const EdgeInsets.symmetric(vertical: 10.0),
-              child: Row(
-                children: [
-                  if (!isLastStep)
-                    ElevatedButton(
-                      onPressed: details.onStepContinue,
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: Colors.blue[900], // Dark blue for Continue button
-                      ),
-                      child: Text('Continue', style: TextStyle(color: Colors.white)),
-                    ),
-                  if (!isLastStep) SizedBox(width: 20),
-                  TextButton(
-                    onPressed: details.onStepCancel,
-                    child: Text(
-                      'Back',
-                      style: TextStyle(
-                        color: Colors.blue[900], // Dark blue for Back button
-                      ),
+        controlsBuilder: (context, details) {
+          final isLastStep = _currentStep == 2;
+          return Padding(
+            padding: const EdgeInsets.symmetric(vertical: 10.0),
+            child: Row(
+              children: [
+                if (!isLastStep)
+                  ElevatedButton(
+                    onPressed: details.onStepContinue,
+                    child: Text('Continue', style: TextStyle(color: Colors.white)),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.blue[900],
                     ),
                   ),
-                ],
-              ),
-            );
-          },
-          steps: [
+                if (!isLastStep) SizedBox(width: 20),
+                TextButton(
+                  onPressed: details.onStepCancel,
+                  child: Text('Back', style: TextStyle(color: Colors.blue[900])),
+                ),
+              ],
+            ),
+          );
+        },
+        steps: [
           Step(
             title: Text("1. Delivery Options"),
             content: Form(
@@ -130,47 +130,83 @@ class _CheckoutPageState extends State<CheckoutPage> {
                     children: [
                       Expanded(
                         child: ElevatedButton(
-                          onPressed: () {},
+                          onPressed: () {
+                            setState(() {
+                              isDelivery = true;
+                            });
+                          },
                           style: ElevatedButton.styleFrom(
-                            backgroundColor: Colors.blue[900], // Dark blue background
+                            backgroundColor: isDelivery ? Colors.blue[900] : Colors.white,
+                            side: BorderSide(color: Colors.blue[900]!),
                           ),
-                          child: Text("Delivery", style: TextStyle(color: Colors.white)), // White text
+                          child: Text(
+                            "Delivery",
+                            style: TextStyle(
+                              color: isDelivery ? Colors.white : Colors.blue[900],
+                            ),
+                          ),
                         ),
                       ),
                       SizedBox(width: 10),
                       Expanded(
-                        child: OutlinedButton(
-                          onPressed: () {},
-                          style: OutlinedButton.styleFrom(
-                            side: BorderSide(color: Colors.blue[900]!), // Dark blue border
-                            foregroundColor: Colors.blue[900], // Dark blue text
+                        child: ElevatedButton(
+                          onPressed: () {
+                            setState(() {
+                              isDelivery = false;
+                            });
+                          },
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: !isDelivery ? Colors.blue[900] : Colors.white,
+                            side: BorderSide(color: Colors.blue[900]!),
                           ),
-                          child: Text("Pick Up"),
+                          child: Text(
+                            "Pick Up",
+                            style: TextStyle(
+                              color: !isDelivery ? Colors.white : Colors.blue[900],
+                            ),
+                          ),
                         ),
                       ),
                     ],
                   ),
                   SizedBox(height: 10),
-                  TextFormField(
-                    decoration: InputDecoration(labelText: "First Name"),
-                    onChanged: (value) => firstName = value,
-                  ),
-                  TextFormField(
-                    decoration: InputDecoration(labelText: "Last Name"),
-                    onChanged: (value) => lastName = value,
-                  ),
-                  TextFormField(
-                    decoration: InputDecoration(labelText: "Address"),
-                    onChanged: (value) => address = value,
-                  ),
-                  TextFormField(
-                    decoration: InputDecoration(labelText: "Email"),
-                    onChanged: (value) => email = value,
-                  ),
-                  TextFormField(
-                    decoration: InputDecoration(labelText: "Phone Number"),
-                    onChanged: (value) => phone = value,
-                  ),
+                  if (isDelivery) ...[
+                    TextFormField(
+                      decoration: InputDecoration(labelText: "First Name"),
+                      onChanged: (value) => firstName = value,
+                    ),
+                    TextFormField(
+                      decoration: InputDecoration(labelText: "Last Name"),
+                      onChanged: (value) => lastName = value,
+                    ),
+                    TextFormField(
+                      decoration: InputDecoration(labelText: "Address"),
+                      onChanged: (value) => address = value,
+                    ),
+                    TextFormField(
+                      decoration: InputDecoration(labelText: "Email"),
+                      onChanged: (value) => email = value,
+                    ),
+                    TextFormField(
+                      decoration: InputDecoration(labelText: "Phone Number"),
+                      onChanged: (value) => phone = value,
+                    ),
+                  ] else ...[
+                    DropdownButtonFormField<String>(
+                      decoration: InputDecoration(labelText: "Pickup Location"),
+                      items: pickupLocations.map((location) {
+                        return DropdownMenuItem(value: location, child: Text(location));
+                      }).toList(),
+                      onChanged: (value) => setState(() => selectedLocation = value),
+                    ),
+                    DropdownButtonFormField<String>(
+                      decoration: InputDecoration(labelText: "Pickup Time"),
+                      items: pickupTimes.map((time) {
+                        return DropdownMenuItem(value: time, child: Text(time));
+                      }).toList(),
+                      onChanged: (value) => setState(() => selectedTime = value),
+                    ),
+                  ],
                 ],
               ),
             ),
@@ -185,31 +221,19 @@ class _CheckoutPageState extends State<CheckoutPage> {
                   title: Text("Credit Card"),
                   value: "credit",
                   groupValue: _selectedPaymentMethod,
-                  onChanged: (value) {
-                    setState(() {
-                      _selectedPaymentMethod = value.toString();
-                    });
-                  },
+                  onChanged: (value) => setState(() => _selectedPaymentMethod = value.toString()),
                 ),
                 RadioListTile(
                   title: Text("PayPal"),
                   value: "paypal",
                   groupValue: _selectedPaymentMethod,
-                  onChanged: (value) {
-                    setState(() {
-                      _selectedPaymentMethod = value.toString();
-                    });
-                  },
+                  onChanged: (value) => setState(() => _selectedPaymentMethod = value.toString()),
                 ),
                 RadioListTile(
                   title: Text("Cash on Delivery"),
                   value: "cod",
                   groupValue: _selectedPaymentMethod,
-                  onChanged: (value) {
-                    setState(() {
-                      _selectedPaymentMethod = value.toString();
-                    });
-                  },
+                  onChanged: (value) => setState(() => _selectedPaymentMethod = value.toString()),
                 ),
               ],
             ),
@@ -227,34 +251,19 @@ class _CheckoutPageState extends State<CheckoutPage> {
                   child: Padding(
                     padding: EdgeInsets.all(12),
                     child: Row(
-                      crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Container(
-                          width: 80,
-                          height: 80,
-                          child: Image.asset(
-                            'assets/images/pegasus.jpeg',
-                            fit: BoxFit.contain,
-                          ),
-                        ),
+                        Image.asset('assets/images/pegasus.jpeg', width: 80, height: 80),
                         SizedBox(width: 10),
                         Expanded(
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              Text(
-                                'Nike Air Zoom Pegasus 37',
-                                style: TextStyle(fontWeight: FontWeight.bold),
-                              ),
-                              SizedBox(height: 5),
+                              Text('Nike Air Zoom Pegasus 37', style: TextStyle(fontWeight: FontWeight.bold)),
                               Text('Size: 4.5'),
                               Text('Color: Indigo Haze/Purple Pulse'),
                               Text('Qty: 1'),
                               SizedBox(height: 5),
-                              Text(
-                                '£104.95',
-                                style: TextStyle(fontWeight: FontWeight.bold),
-                              ),
+                              Text('£104.95', style: TextStyle(fontWeight: FontWeight.bold)),
                             ],
                           ),
                         ),
@@ -265,13 +274,7 @@ class _CheckoutPageState extends State<CheckoutPage> {
                 Divider(),
                 Align(
                   alignment: Alignment.centerRight,
-                  child: Text(
-                    'Total: Rp6.098.000',
-                    style: TextStyle(
-                      fontWeight: FontWeight.bold,
-                      fontSize: 16,
-                    ),
-                  ),
+                  child: Text('Total: Rp6.098.000', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
                 ),
                 SizedBox(height: 20),
                 Center(
@@ -285,7 +288,7 @@ class _CheckoutPageState extends State<CheckoutPage> {
                           actions: [
                             TextButton(
                               onPressed: () {
-                                Navigator.pop(context); // Tutup dialog dulu
+                                Navigator.pop(context);
                                 Navigator.push(
                                   context,
                                   MaterialPageRoute(builder: (context) => OrdersPage()),
@@ -298,10 +301,10 @@ class _CheckoutPageState extends State<CheckoutPage> {
                       );
                     },
                     style: ElevatedButton.styleFrom(
-                      backgroundColor: Colors.blue[900], // Dark blue background for Submit Order
+                      backgroundColor: Colors.blue[900],
                       padding: EdgeInsets.symmetric(horizontal: 40, vertical: 12),
                     ),
-                    child: Text("Submit Order", style: TextStyle(color: Colors.white)), // White text
+                    child: Text("Submit Order", style: TextStyle(color: Colors.white)),
                   ),
                 ),
               ],

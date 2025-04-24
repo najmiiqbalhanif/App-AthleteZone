@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'cartpage.dart';
+import 'productPageDetail.dart';
 
 class ProductDetailPage extends StatefulWidget {
   final List<String> imageUrls;
@@ -20,8 +21,11 @@ class ProductDetailPage extends StatefulWidget {
 }
 
 class _ProductDetailPageState extends State<ProductDetailPage> {
+  String _selectedSize = "Select Size"; // Variabel untuk menyimpan ukuran yang dipilih
   final PageController _pageController = PageController();
   int _currentPage = 0;
+  bool _isFavorited = false;
+
 
   @override
   Widget build(BuildContext context) {
@@ -29,6 +33,7 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
       backgroundColor: Colors.white,
       appBar: AppBar(
         title: Text(widget.title),
+        centerTitle: true, // Tambahkan ini
         backgroundColor: Colors.white,
         elevation: 0,
         foregroundColor: Colors.black,
@@ -152,20 +157,20 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
                       padding: const EdgeInsets.symmetric(
                           horizontal: 12, vertical: 8),
                       decoration: BoxDecoration(
-                        border: Border.all(color: Colors.grey.shade400),
+                        border: Border.all(color: Colors.blueAccent),
                         borderRadius: BorderRadius.circular(8),
                         color: _currentPage == 2
-                            ? Colors.grey.shade200
+                            ? Colors.black
                             : Colors.transparent,
                       ),
                       child: Row(
                         children: [
-                          const Icon(Icons.color_lens, size: 20),
+                          const Icon(Icons.color_lens, size: 20, color: Colors.blueAccent),
                           const SizedBox(width: 4),
                           Text(
                             "Design Your Own",
                             style: TextStyle(
-                              color: Colors.grey.shade800,
+                              color: Colors.black,
                             ),
                           ),
                         ],
@@ -185,13 +190,30 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
                 children: [
                   Expanded(
                     child: OutlinedButton(
-                      onPressed: () {},
+                      onPressed: () {
+                        showModalBottomSheet(
+                          context: context,
+                          shape: const RoundedRectangleBorder(
+                            borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+                          ),
+                          builder: (BuildContext context) {
+                            return _SizeSelectorSheet(
+                              onSizeSelected: (size) {
+                                setState(() {
+                                  _selectedSize = size;
+                                });
+                                Navigator.pop(context);
+                              }
+                            );
+                          },
+                        );
+                      },
                       style: OutlinedButton.styleFrom(
                         foregroundColor: Colors.black,
-                        side: const BorderSide(color: Colors.black),
+                        side: const BorderSide(color: Colors.blue),
                         padding: const EdgeInsets.symmetric(vertical: 16),
                       ),
-                      child: const Text("Select Size"),
+                      child: Text(_selectedSize),
                     ),
                   ),
                   const SizedBox(width: 8),
@@ -206,7 +228,7 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
                         );
                       },
                       style: ElevatedButton.styleFrom(
-                        backgroundColor: Colors.black,
+                        backgroundColor: Colors.blue,
                         foregroundColor: Colors.white,
                         padding: const EdgeInsets.symmetric(vertical: 16),
                       ),
@@ -216,14 +238,19 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
                   const SizedBox(width: 8),
                   Expanded(
                     child: OutlinedButton(
-                      onPressed: () {},
+                      onPressed: () {
+                        setState(() {
+                          _isFavorited = !_isFavorited;
+                        });
+                      },
                       style: OutlinedButton.styleFrom(
                         foregroundColor: Colors.black,
-                        side: const BorderSide(color: Colors.black),
+                        side: const BorderSide(color: Colors.blue),
                         padding: const EdgeInsets.symmetric(vertical: 16),
                       ),
-                      child: const Text("Favorite"),
+                      child: Text(_isFavorited ? "Favorited ❤︎" : "Favorite"),
                     ),
+
                   ),
                 ],
               ),
@@ -266,16 +293,18 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
             const SizedBox(height: 16),
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 16.0),
-              child: InkWell(
-                onTap: () {},
-                child: Text(
-                  "View Product Details",
-                  style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                    color: Colors.blue,
-                    decoration: TextDecoration.underline,
+                child: InkWell(
+                  onTap: () {
+                    Navigator.of(context).push(_createRoute());
+                  },
+                  child: Text(
+                    "View Product Details",
+                    style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                      color: Colors.blue,
+                      decoration: TextDecoration.underline,
+                    ),
                   ),
-                ),
-              ),
+                )
             ),
             const SizedBox(height: 32),
           ],
@@ -316,3 +345,93 @@ class _ColorOption extends StatelessWidget {
     );
   }
 }
+
+class _SizeSelectorSheet extends StatelessWidget {
+  final Function(String) onSizeSelected; // Callback untuk mengirim ukuran yang dipilih
+
+  const _SizeSelectorSheet({super.key, required this.onSizeSelected});
+
+  @override
+  Widget build(BuildContext context) {
+    final List<String> sizes = List.generate(10, (index) => 'EU ${38 + index}');
+
+    return Container(
+      padding: const EdgeInsets.all(16),
+      height: 340,
+      decoration: const BoxDecoration(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Center(
+            child: Container(
+              width: 40,
+              height: 4,
+              margin: const EdgeInsets.only(bottom: 16),
+              decoration: BoxDecoration(
+                color: Colors.grey[400],
+                borderRadius: BorderRadius.circular(2),
+              ),
+            ),
+          ),
+          const Text(
+            "Select Size",
+            style: TextStyle(
+              fontSize: 18,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+          const SizedBox(height: 16),
+          Wrap(
+            spacing: 12,
+            runSpacing: 12,
+            children: sizes.map((size) {
+              return GestureDetector(
+                onTap: () {
+                  onSizeSelected(size); // Panggil callback dengan ukuran yang dipilih
+                },
+                child: Container(
+                  width: 80, // Ukuran simetris
+                  height: 48,
+                  alignment: Alignment.center,
+                  decoration: BoxDecoration(
+                    border: Border.all(color: Colors.blueAccent),
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: Text(
+                    size,
+                    style: const TextStyle(fontSize: 16),
+                  ),
+                ),
+              );
+            }).toList(),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+
+
+Route _createRoute() {
+  return PageRouteBuilder(
+    pageBuilder: (context, animation, secondaryAnimation) =>
+    const productPageDetail(),
+    transitionsBuilder: (context, animation, secondaryAnimation, child) {
+      const begin = Offset(1.0, 0.0); // slide from right
+      const end = Offset.zero;
+      const curve = Curves.ease;
+
+      final tween = Tween(begin: begin, end: end).chain(CurveTween(curve: curve));
+      final offsetAnimation = animation.drive(tween);
+
+      return SlideTransition(
+        position: offsetAnimation,
+        child: child,
+      );
+    },
+  );
+}
+

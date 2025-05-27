@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:helloworld/presentation/pages/ordersPage.dart';
 import 'package:helloworld/presentation/pages/profilepage.dart';
+import '../../models/Payment.dart';
+import '../../services/CheckoutService.dart';
+
 
 void main() {
   runApp(MaterialApp(
@@ -50,6 +53,16 @@ class _CheckoutPageState extends State<CheckoutPage> {
 
   List<String> pickupLocations = ['Bandung Store', 'Jakarta Store'];
   List<String> pickupTimes = ['10:00 AM', '1:00 PM', '4:00 PM'];
+  final checkoutService = CheckoutService(baseUrl: 'http://your-backend-url');
+
+  List<PaymentItemDTO> cartItems = [
+    PaymentItemDTO(
+      name: 'Nike Air Zoom Pegasus 37',
+      quantity: 1,
+      price: 6098000,
+      subTotal: 6098000,
+    ),
+  ];
 
   @override
   Widget build(BuildContext context) {
@@ -279,26 +292,53 @@ class _CheckoutPageState extends State<CheckoutPage> {
                 SizedBox(height: 20),
                 Center(
                   child: ElevatedButton(
-                    onPressed: () {
-                      showDialog(
-                        context: context,
-                        builder: (context) => AlertDialog(
-                          title: Text("Order Confirmed"),
-                          content: Text("Thank you for your purchase!"),
-                          actions: [
-                            TextButton(
-                              onPressed: () {
-                                Navigator.pop(context);
-                                Navigator.push(
-                                  context,
-                                  MaterialPageRoute(builder: (context) => OrdersPage()),
-                                );
-                              },
-                              child: Text("OK"),
-                            ),
-                          ],
-                        ),
-                      );
+                    onPressed: () async {
+                      try {
+                        // Contoh data payment, sesuaikan dengan data sebenarnya
+                        final payment = PaymentDTO(
+                          userId: 1, // ganti dengan user login sebenarnya
+                          paymentMethod: _selectedPaymentMethod ?? 'credit',
+                          address: address, // pastikan ini sudah diisi user
+                          totalAmount: 6098000, // hitung total harga dari cart kamu
+                        );
+
+                        // Contoh list item, sesuaikan dengan keranjang yang sebenarnya
+                        final items = [
+                          PaymentItemDTO(
+                            name: 'Nike Air Zoom Pegasus 37',
+                            quantity: 1,
+                            price: 6098000,
+                            subTotal: 6098000,
+                          ),
+                        ];
+
+                        // Panggil service untuk submit checkout (pastikan sudah buat CheckoutService)
+                        await checkoutService.submitCheckout(payment, items);
+
+                        showDialog(
+                          context: context,
+                          builder: (context) => AlertDialog(
+                            title: Text("Order Confirmed"),
+                            content: Text("Thank you for your purchase!"),
+                            actions: [
+                              TextButton(
+                                onPressed: () {
+                                  Navigator.pop(context);
+                                  Navigator.push(
+                                    context,
+                                    MaterialPageRoute(builder: (context) => OrdersPage()),
+                                  );
+                                },
+                                child: Text("OK"),
+                              ),
+                            ],
+                          ),
+                        );
+                      } catch (e) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(content: Text('Failed to submit order')),
+                        );
+                      }
                     },
                     style: ElevatedButton.styleFrom(
                       backgroundColor: Colors.blue[900],

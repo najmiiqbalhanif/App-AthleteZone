@@ -1,74 +1,70 @@
 import 'package:flutter/material.dart';
+import '../../models/Product.dart';
+import '../../services/ProductService.dart';
 
-class ShopPage extends StatelessWidget {
+class ShopPage extends StatefulWidget {
   const ShopPage({super.key});
 
   @override
+  State<ShopPage> createState() => _ShopPageState();
+}
+
+class _ShopPageState extends State<ShopPage> with SingleTickerProviderStateMixin {
+  late Future<List<Product>> _futureProducts;
+  late TabController _tabController;
+
+  final List<String> _categories = ['shoes', 'jerseys', 'pants', 'socks', 'caps'];
+
+  @override
+  void initState() {
+    super.initState();
+    _futureProducts = ProductService().getProducts();
+    _tabController = TabController(length: _categories.length, vsync: this);
+  }
+
+  @override
   Widget build(BuildContext context) {
-    return DefaultTabController(
-      length: 5,
-      child: Scaffold(
+    return Scaffold(
+      backgroundColor: Colors.white,
+      appBar: AppBar(
         backgroundColor: Colors.white,
-        appBar: AppBar(
-          backgroundColor: Colors.white,
-          title: const Text(
-            'Shop',
-            style: TextStyle(
-            fontWeight: FontWeight.bold
-            ),
-          ),
-          bottom: const TabBar(
-            isScrollable: true,
-            tabs: [
-              Tab(text: 'Shoes'),
-              Tab(text: 'Jerseys'),
-              Tab(text: 'Pants'),
-              Tab(text: 'Socks'),
-              Tab(text: 'Caps'),
-            ],
-            labelColor: Colors.black,
-            unselectedLabelColor: Colors.grey,
-            indicatorColor: Colors.black,
-          ),
+        title: const Text(
+          'Shop',
+          style: TextStyle(fontWeight: FontWeight.bold),
         ),
-        body: TabBarView(
-          children: [
-            _buildProductGrid(category: 'Shoes'),
-            _buildProductGrid(category: 'Jerseys'),
-            _buildProductGrid(category: 'Pants'),
-            _buildProductGrid(category: 'Socks'),
-            _buildProductGrid(category: 'Caps'),
-          ],
+        bottom: TabBar(
+          controller: _tabController,
+          isScrollable: true,
+          tabs: _categories.map((category) => Tab(text: category)).toList(),
+          labelColor: Colors.black,
+          unselectedLabelColor: Colors.grey,
+          indicatorColor: Colors.black,
         ),
+      ),
+      body: FutureBuilder<List<Product>>(
+        future: _futureProducts,
+        builder: (context, snapshot) {
+          if (snapshot.connectionState == ConnectionState.waiting) {
+            return const Center(child: CircularProgressIndicator());
+          }
+          if (snapshot.hasError) {
+            return Center(child: Text('Error: ${snapshot.error}'));
+          }
+
+          final products = snapshot.data!;
+          return TabBarView(
+            controller: _tabController,
+            children: _categories.map((category) {
+              final filtered = products.where((p) => p.category == category).toList();
+              return _buildProductGrid(filtered);
+            }).toList(),
+          );
+        },
       ),
     );
   }
 
-  Widget _buildProductGrid({required String category}) {
-    // Data dummy - sesuaikan dengan data asli Anda
-    final List<Product> products = [
-      Product(
-        name: 'Nike Air Max',
-        brand: 'Nike',
-        category: 'Shoes',
-        price: 1500000,
-        image: 'assets/images/shoes1.png',
-        tag: 'New',
-      ),
-      Product(
-        name: 'Adidas Jersey',
-        brand: 'Nike',
-        category: 'Jerseys',
-        price: 599000,
-        image: 'assets/images/jersey1.jpg',
-        tag: 'Popular',
-      ),
-      // Tambahkan data lainnya sesuai kategori
-    ];
-
-    // Filter produk berdasarkan kategori
-    final filteredProducts = products.where((p) => p.category == category).toList();
-
+  Widget _buildProductGrid(List<Product> products) {
     return GridView.builder(
       padding: const EdgeInsets.all(16),
       gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
@@ -77,9 +73,9 @@ class ShopPage extends StatelessWidget {
         crossAxisSpacing: 16,
         mainAxisSpacing: 16,
       ),
-      itemCount: filteredProducts.length,
+      itemCount: products.length,
       itemBuilder: (context, index) {
-        final product = filteredProducts[index];
+        final product = products[index];
         return ProductItem(product: product);
       },
     );
@@ -103,85 +99,50 @@ class ProductItem extends StatelessWidget {
             children: [
               ClipRRect(
                 borderRadius: const BorderRadius.vertical(top: Radius.circular(12)),
-                child: Image.asset(
-                  product.image,
+                child: Image.network(
+                  product.photoUrl,
                   height: 150,
                   width: double.infinity,
                   fit: BoxFit.cover,
+                  errorBuilder: (context, error, stackTrace) =>
+                  const Center(child: Icon(Icons.broken_image)),
                 ),
               ),
-              if (product.tag != null)
-                Positioned(
-                  top: 8,
-                  left: 8,
-                  child: Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                    decoration: BoxDecoration(
-                      color: Colors.black,
-                      borderRadius: BorderRadius.circular(4),
-                    ),
-                    child: Text(
-                      product.tag!,
-                      style: const TextStyle(
-                          color: Colors.white,
-                          fontSize: 12,
-                          fontWeight: FontWeight.bold),
-                    ),
-                  ),
-                ),
             ],
           ),
-          Padding(
-            padding: const EdgeInsets.all(8.0),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  product.name,
-                  style: const TextStyle(
-                    fontWeight: FontWeight.bold,
-                    fontSize: 16,
+          Expanded(
+            child: Padding(
+              padding: const EdgeInsets.fromLTRB(8, 8, 8, 4),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    product.name,
+                    style: const TextStyle(
+                      fontWeight: FontWeight.bold,
+                      fontSize: 16,
+                    ),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
                   ),
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                ),
-                Text(
-                  product.brand,
-                ),
-                const SizedBox(height: 4),
-                Text(
-                  'Rp${product.price.toString().replaceAllMapped(
-                      RegExp(r'(\d{1,3})(?=(\d{3})+(?!\d))'),
-                          (match) => '${match[1]}.'
-                  )}',
-                  style: TextStyle(
-                    color: Colors.grey[600],
-                    fontSize: 14,
+                  Text(product.brand),
+                  const Spacer(),
+                  Align(
+                    alignment: Alignment.bottomRight,
+                    child: Text(
+                      'Rp${product.price.toStringAsFixed(0).replaceAllMapped(RegExp(r'(\d{1,3})(?=(\d{3})+(?!\d))'), (match) => '${match[1]}.')}',
+                      style: TextStyle(
+                        color: Colors.grey[800],
+                        fontSize: 14,
+                      ),
+                    ),
                   ),
-                ),
-              ],
+                ],
+              ),
             ),
           ),
         ],
       ),
     );
   }
-}
-
-class Product {
-  final String name;
-  final String category;
-  final String brand;
-  final int price;
-  final String image;
-  final String? tag;
-
-  Product({
-    required this.name,
-    required this.category,
-    required this.brand,
-    required this.price,
-    required this.image,
-    this.tag,
-  });
 }

@@ -157,7 +157,7 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
                       padding: const EdgeInsets.symmetric(
                           horizontal: 12, vertical: 8),
                       decoration: BoxDecoration(
-                        border: Border.all(color: Colors.blueAccent),
+                        border: Border.all(color: const Color(0xFF041761)),
                         borderRadius: BorderRadius.circular(8),
                         color: _currentPage == 2
                             ? Colors.black
@@ -165,7 +165,7 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
                       ),
                       child: Row(
                         children: [
-                          const Icon(Icons.color_lens, size: 20, color: Colors.blueAccent),
+                          const Icon(Icons.color_lens, size: 20, color: const Color(0xFF041761)),
                           const SizedBox(width: 4),
                           Text(
                             "Design Your Own",
@@ -210,7 +210,7 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
                       },
                       style: OutlinedButton.styleFrom(
                         foregroundColor: Colors.black,
-                        side: const BorderSide(color: Colors.blue),
+                        side: const BorderSide(color: const Color(0xFF041761)),
                         padding: const EdgeInsets.symmetric(vertical: 16),
                       ),
                       child: Text(_selectedSize),
@@ -228,7 +228,7 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
                         );
                       },
                       style: ElevatedButton.styleFrom(
-                        backgroundColor: Colors.blue,
+                          backgroundColor: const Color(0xFF041761),
                         foregroundColor: Colors.white,
                         padding: const EdgeInsets.symmetric(vertical: 16),
                       ),
@@ -245,7 +245,7 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
                       },
                       style: OutlinedButton.styleFrom(
                         foregroundColor: Colors.black,
-                        side: const BorderSide(color: Colors.blue),
+                        side: const BorderSide(color: const Color(0xFF041761)),
                         padding: const EdgeInsets.symmetric(vertical: 16),
                       ),
                       child: Text(_isFavorited ? "Favorited ❤︎" : "Favorite"),
@@ -300,7 +300,7 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
                   child: Text(
                     "View Product Details",
                     style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                      color: Colors.blue,
+                      color: const Color(0xFF041761),
                       decoration: TextDecoration.underline,
                     ),
                   ),
@@ -396,7 +396,7 @@ class _SizeSelectorSheet extends StatelessWidget {
                   height: 48,
                   alignment: Alignment.center,
                   decoration: BoxDecoration(
-                    border: Border.all(color: Colors.blueAccent),
+                    border: Border.all(color: const Color(0xFF041761)),
                     borderRadius: BorderRadius.circular(8),
                   ),
                   child: Text(

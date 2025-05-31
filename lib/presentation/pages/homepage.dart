@@ -1,8 +1,39 @@
 import 'package:flutter/material.dart';
 import 'productpage.dart';
+import '../../services/homepageservice.dart';
+import '../../models/product.dart';
 
-class HomePage extends StatelessWidget {
+class HomePage extends StatefulWidget {
   const HomePage({super.key});
+
+  @override
+  State<HomePage> createState() => _HomePageState();
+}
+
+class _HomePageState extends State<HomePage> {
+  List<Product> _products = [];
+  bool _isLoading = true;
+
+  @override
+  void initState() {
+    super.initState();
+    fetchProducts();
+  }
+
+  void fetchProducts() async {
+    try {
+      final products = await Homepageservice.fetchHomepageProducts();
+      setState(() {
+        _products = products;
+        _isLoading = false;
+      });
+    } catch (e) {
+      setState(() {
+        _isLoading = false;
+      });
+      print("Error fetching products: $e");
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -34,76 +65,33 @@ class HomePage extends StatelessWidget {
               ),
               const SizedBox(height: 16),
               SizedBox(
-                height: 270,
-                child: SingleChildScrollView(
+                height: 150,
+                child: _isLoading
+                    ? const Center(child: CircularProgressIndicator())
+                    : SingleChildScrollView(
                   scrollDirection: Axis.horizontal,
                   child: Row(
-                      children: [
-                        ProductCard(
-                          imageUrl: "assets/images/shoes1.png",
-                          title: "Jordan ADG 5",
-                          category: "Golf Shoes",
-                          price: "Rp 3.049.000",
-                          onTap: () {
-                            Navigator.push(
-                              context,
-                              MaterialPageRoute(
-                                builder: (context) => ProductDetailPage(
-                                  imageUrls: [
-                                    "assets/images/shoes1.png"
-                                  ], // atau bisa lebih dari 1 kalau kamu punya
-                                  title: "Jordan ADG 5",
-                                  category: "Golf Shoes",
-                                  price: "Rp 3.049.000",
-                                ),
+                    children: _products.map((product) {
+                      return ProductCard(
+                        imageUrl: product.photoUrl,
+                        title: product.name,
+                        category: product.category,
+                        price: 'Rp ${product.price.toStringAsFixed(0)}',
+                        onTap: () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) => ProductDetailPage(
+                                imageUrls: [product.photoUrl],
+                                title: product.name,
+                                category: product.category,
+                                price: 'Rp ${product.price.toStringAsFixed(0)}',
                               ),
-                            );
-                          },
-                        ),
-                        ProductCard(
-                          imageUrl: "assets/images/shoes2.png",
-                          title: "Nike Air Max 270",
-                          category: "Lifestyle Shoes",
-                          price: "Rp 2.099.000",
-                          onTap: () {
-                            Navigator.push(
-                              context,
-                              MaterialPageRoute(
-                                builder: (context) => ProductDetailPage(
-                                  imageUrls: [
-                                    "assets/images/shoes2.png"
-                                  ],
-                                  title: "Nike Air Max 270",
-                                  category: "Lifestyle Shoes",
-                                  price: "Rp 2.099.000",
-                                ),
-                              ),
-                            );
-                          },
-                        ),
-
-                        ProductCard(
-                          imageUrl: "assets/images/shoes3.png",
-                          title: "Nike ZoomX Vaporfly",
-                          category: "Running Shoes",
-                          price: "Rp 3.499.000",
-                          onTap: () {
-                            Navigator.push(
-                              context,
-                              MaterialPageRoute(
-                                builder: (context) => ProductDetailPage(
-                                  imageUrls: [
-                                    "assets/images/shoes3.png"
-                                  ],
-                                  title: "Nike ZoomX Vaporfly",
-                                  category: "Running Shoes",
-                                  price: "Rp 3.499.000",
-                                ),
-                              ),
-                            );
-                          },
-                        ),
-                      ]
+                            ),
+                          );
+                        },
+                      );
+                    }).toList(),
                   ),
                 ),
               ),
@@ -111,9 +99,7 @@ class HomePage extends StatelessWidget {
               const PromoCarousel(),
               const SizedBox(height: 24),
               const BigPromoBanner(),
-              const SizedBox(height: 24), // Tambahan agar tidak terlalu mepet dengan bottom navbar
-
-              const SizedBox(height: 40), // Jarak atas
+              const SizedBox(height: 40),
               Center(
                 child: Column(
                   children: [
@@ -138,7 +124,7 @@ class HomePage extends StatelessWidget {
                     ),
                     const SizedBox(height: 32),
                     Image.asset(
-                      'assets/images/athletezone-logo-mini.png', // pastikan file ini ada di folder assets/images
+                      'assets/images/athletezone-logo-mini.png',
                       width: 40,
                       height: 40,
                     ),
@@ -151,7 +137,7 @@ class HomePage extends StatelessWidget {
                       ),
                       textAlign: TextAlign.center,
                     ),
-                    const SizedBox(height: 40), // Jarak bawah agar tidak terlalu mentok
+                    const SizedBox(height: 40),
                   ],
                 ),
               ),
@@ -220,7 +206,6 @@ class ProductCard extends StatelessWidget {
     );
   }
 }
-
 
 class PromoCarousel extends StatefulWidget {
   const PromoCarousel({super.key});
@@ -379,5 +364,3 @@ class BigPromoBanner extends StatelessWidget {
     );
   }
 }
-
-

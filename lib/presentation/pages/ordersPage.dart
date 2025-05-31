@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:intl/intl.dart';
 
 class OrdersPage extends StatefulWidget {
   const OrdersPage({super.key});
@@ -8,53 +9,113 @@ class OrdersPage extends StatefulWidget {
 }
 
 class _OrdersPageState extends State<OrdersPage> {
+  final List<Map<String, dynamic>> orders = [
+    {
+      'orderId': 'ORD001',
+      'date': '2024-05-30',
+      'totalAmount': 1200000,
+      'items': [
+        {
+          'name': 'Nike Cap',
+          'image': 'assets/images/caps_nike.png',
+          'qty': 2,
+          'status': 'paid',
+          'price': 300000,
+          'size': 'L',
+          'description': "Men's Cap\nBlack",
+        },
+        {
+          'name': 'Nike Socks',
+          'image': 'assets/images/shoes1.png',
+          'qty': 1,
+          'status': 'paid',
+          'price': 600000,
+          'size': 'Free Size',
+          'description': "Socks\nWhite",
+        },
+      ]
+    },
+    {
+      'orderId': 'ORD002',
+      'date': '2024-06-01',
+      'totalAmount': 899000,
+      'items': [
+        {
+          'name': 'Adidas Cap',
+          'image': 'assets/images/caps_adidas.png',
+          'qty': 1,
+          'status': 'on process',
+          'price': 899000,
+          'size': 'M',
+          'description': "Men's Cap\nBlue",
+        },
+      ]
+    },
+  ];
+
+  final NumberFormat currencyFormat = NumberFormat.currency(locale: 'id_ID', symbol: 'Rp', decimalDigits: 0);
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Colors.white,
       appBar: AppBar(
         backgroundColor: Colors.white,
-        title: Text(
+        title: const Text(
           'Orders',
-          style: TextStyle(
-              fontWeight: FontWeight.bold
-          ),
+          style: TextStyle(fontWeight: FontWeight.bold),
         ),
       ),
-      body: Column(
-        children: [
-          // Daftar Produk
-          Expanded(
-            child: ListView(
-              padding: const EdgeInsets.all(16),
+      body: ListView.builder(
+        padding: const EdgeInsets.all(16),
+        itemCount: orders.length,
+        itemBuilder: (context, index) {
+          final order = orders[index];
+          return ExpansionTile(
+            tilePadding: const EdgeInsets.symmetric(vertical: 4.0, horizontal: 8.0),
+            title: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                _buildOrdersItem(context, 'assets/images/caps_nike.png', status: 'paid'),
-                const Divider(),
-                _buildOrdersItem(context, 'assets/images/caps_adidas.png', status: 'on process'),
-                const Divider(),
-                _buildOrdersItem(context, 'assets/images/shoes1.png', status: 'done'),
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      "Order ID: ${order['orderId']}",
+                      style: const TextStyle(fontWeight: FontWeight.bold),
+                    ),
+                    Text("Date: ${order['date']}")
+                  ],
+                ),
+                Text(
+                  currencyFormat.format(order['totalAmount']),
+                  style: const TextStyle(
+                    fontWeight: FontWeight.bold,
+                    fontSize: 14,
+                    color: Colors.black87,
+                  ),
+                ),
               ],
             ),
-          ),
-
-          // Total dan Checkout
-          Container(
-            padding: const EdgeInsets.all(16),
-            decoration: BoxDecoration(
-              border: Border(top: BorderSide(color: Colors.grey.shade300)),
-              color: Colors.white,
-            ),
-          )
-        ],
+            children: order['items'].map<Widget>((item) {
+              return Column(
+                children: [
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 8.0, vertical: 8),
+                    child: _buildOrderItem(context, item),
+                  ),
+                  const Divider(),
+                ],
+              );
+            }).toList(),
+          );
+        },
       ),
     );
   }
 
-  Widget _buildOrdersItem(BuildContext context, String imagePath,
-      {String status = 'paid'}) {
-    // Tentukan warna berdasarkan status
+  Widget _buildOrderItem(BuildContext context, Map<String, dynamic> item) {
     Color statusColor;
-    switch (status) {
+    switch (item['status']) {
       case 'on process':
         statusColor = Colors.orange;
         break;
@@ -66,103 +127,98 @@ class _OrdersPageState extends State<OrdersPage> {
         statusColor = Colors.blue;
     }
 
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 8.0),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          // --- Gambar & Qty ---
-          Column(
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Container(
+              width: 100,
+              height: 100,
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(8),
+                image: DecorationImage(
+                  image: AssetImage(item['image']),
+                  fit: BoxFit.cover,
+                ),
+              ),
+            ),
+            const SizedBox(height: 4),
+            Text(
+              "Qty: ${item['qty']}",
+              style: const TextStyle(
+                color: Colors.black,
+                fontSize: 16,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(width: 16),
+        Expanded(
+          child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Container(
-                width: 100,
-                height: 100,
-                decoration: BoxDecoration(
-                  borderRadius: BorderRadius.circular(8),
-                  image: DecorationImage(
-                    image: AssetImage(imagePath),
-                    fit: BoxFit.cover,
-                  ),
+              Text(
+                item['name'],
+                style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
+              ),
+              const SizedBox(height: 4),
+              Text(
+                item['description'],
+                style: TextStyle(
+                  color: Colors.grey[600],
+                  fontSize: 14,
                 ),
               ),
               const SizedBox(height: 4),
               Text(
-                "Qty: 2",
+                "Size: ${item['size']}",
                 style: const TextStyle(
-                    color: Colors.black, fontSize: 16, fontWeight: FontWeight.bold),
+                  color: Colors.black87,
+                  fontSize: 14,
+                ),
               ),
             ],
           ),
-          const SizedBox(width: 16),
-
-          // Detail Produk dan Spacer
-          Expanded(
+        ),
+        SizedBox(
+          height: 100,
+          width: 100,
+          child: Align(
+            alignment: Alignment.bottomRight,
             child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.end,
               children: [
-                Text(
-                  "Nike Air Max Dn8",
-                  style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
-                ),
                 const SizedBox(height: 4),
-                Text(
-                  "Men's Shoes\nWhite",
-                  style: TextStyle(
-                    color: Colors.grey[600],
-                    fontSize: 14,
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                  decoration: BoxDecoration(
+                    color: statusColor.withOpacity(0.1),
+                    border: Border.all(color: statusColor),
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: Text(
+                    item['status'].toUpperCase(),
+                    style: TextStyle(
+                      color: statusColor,
+                      fontSize: 12,
+                      fontWeight: FontWeight.w600,
+                    ),
                   ),
                 ),
-                const SizedBox(height: 8),
-                const Text(
-                  "42",
-                  style: TextStyle(
-                    color: Colors.black87,
-                    fontSize: 14,
-                  ),
+                const Spacer(),
+                Text(
+                  currencyFormat.format(item['price']),
+                  style: Theme.of(context).textTheme.bodyLarge?.copyWith(fontWeight: FontWeight.bold),
                 ),
               ],
             ),
           ),
-
-          // Harga & Status di kanan bawah
-          SizedBox(
-            height: 100,
-            width: 100,
-            child: Align(
-              alignment: Alignment.bottomRight,
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                crossAxisAlignment: CrossAxisAlignment.end,
-                children: [
-                  const SizedBox(height: 4),
-                  Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                    decoration: BoxDecoration(
-                      color: statusColor.withOpacity(0.1),
-                      border: Border.all(color: statusColor),
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    child: Text(
-                      status.toUpperCase(),
-                      style: TextStyle(
-                        color: statusColor,
-                        fontSize: 12,
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
-                  ),
-                  const Spacer(),
-                  Text(
-                    "Rp6.098.000",
-                    style: Theme.of(context).textTheme.bodyLarge?.copyWith(fontWeight: FontWeight.bold),
-                  ),
-                ],
-              ),
-            ),
-          )
-        ],
-      ),
+        )
+      ],
     );
   }
 }

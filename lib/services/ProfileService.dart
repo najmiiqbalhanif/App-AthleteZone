@@ -9,8 +9,7 @@ class ProfileService {
   Future<User?> fetchUserProfile() async {
     try {
 
-
-      final response = await http.get(Uri.parse("$baseUrl/3")); //kalau mau testing coba masukkan id nya '3'
+      final response = await http.get(Uri.parse("$baseUrl/18")); //kalau mau testing coba masukkan id nya '3'
 
       if (response.statusCode == 200) {
         final data = json.decode(response.body);

@@ -1,9 +1,49 @@
+import 'dart:convert';
 import 'package:flutter/material.dart';
+import 'package:http/http.dart' as http;
+import 'package:shared_preferences/shared_preferences.dart';
 import '../mainLayout.dart';
 import 'register.dart';
 
-class LoginPage extends StatelessWidget {
+class LoginPage extends StatefulWidget {
   const LoginPage({super.key});
+
+  @override
+  State<LoginPage> createState() => _LoginPageState();
+}
+
+class _LoginPageState extends State<LoginPage> {
+  final TextEditingController emailController = TextEditingController();
+  final TextEditingController passwordController = TextEditingController();
+
+  Future<void> loginUser() async {
+    final email = emailController.text.trim();
+    final password = passwordController.text.trim();
+
+    final url = Uri.parse('http://10.0.2.2:8080/api/auth/login');
+    final response = await http.post(
+      url,
+      headers: {'Content-Type': 'application/json'},
+      body: jsonEncode({'email': email, 'password': password}),
+    );
+
+    if (response.statusCode == 200) {
+      final responseData = jsonDecode(response.body);
+      final userId = responseData['id'];
+
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setInt('userId', userId);
+
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(builder: (_) => const MainLayout()),
+      );
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Login gagal. Periksa email atau password.')),
+      );
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -15,6 +55,7 @@ class LoginPage extends StatelessWidget {
         child: SingleChildScrollView(
           child: Column(
             children: [
+              // Logo Header
               ConstrainedBox(
                 constraints: BoxConstraints(maxWidth: maxBoxWidth),
                 child: Container(
@@ -47,6 +88,7 @@ class LoginPage extends StatelessWidget {
 
               const SizedBox(height: 24),
 
+              // Form Box
               ConstrainedBox(
                 constraints: BoxConstraints(maxWidth: maxBoxWidth),
                 child: Container(
@@ -96,6 +138,7 @@ class LoginPage extends StatelessWidget {
                       ),
                       const SizedBox(height: 16),
                       TextField(
+                        controller: emailController,
                         decoration: InputDecoration(
                           hintText: 'Email',
                           border: OutlineInputBorder(
@@ -105,6 +148,7 @@ class LoginPage extends StatelessWidget {
                       ),
                       const SizedBox(height: 12),
                       TextField(
+                        controller: passwordController,
                         obscureText: true,
                         decoration: InputDecoration(
                           hintText: 'Password',
@@ -118,13 +162,7 @@ class LoginPage extends StatelessWidget {
                         width: double.infinity,
                         height: 48,
                         child: ElevatedButton(
-                          onPressed: () {
-                            Navigator.pushReplacement(
-                              context,
-                              MaterialPageRoute(builder: (_) => const MainLayout()),
-                            );
-                          },
-
+                          onPressed: loginUser,
                           style: ElevatedButton.styleFrom(
                             backgroundColor: const Color(0xFF1F4D7B),
                             shape: RoundedRectangleBorder(

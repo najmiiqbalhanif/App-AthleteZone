@@ -1,7 +1,10 @@
 import 'package:flutter/material.dart';
 import 'presentation/pages/login.dart'; // arahkan ke LoginPage, bukan MainLayout
 
-void main() => runApp(const MyApp());
+void main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  runApp(const MyApp());
+}
 
 class MyApp extends StatelessWidget {
   const MyApp({super.key});

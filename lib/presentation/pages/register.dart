@@ -1,9 +1,44 @@
 import 'package:flutter/material.dart';
 import '../mainLayout.dart';
 import 'login.dart';
+import '../../models/user.dart';
+import '../../services/auth_service.dart';
 
-class RegisterPage extends StatelessWidget {
+class RegisterPage extends StatefulWidget {
   const RegisterPage({super.key});
+
+  @override
+  State<RegisterPage> createState() => _RegisterPageState();
+}
+
+class _RegisterPageState extends State<RegisterPage> {
+  final TextEditingController fullnameController = TextEditingController();
+  final TextEditingController usernameController = TextEditingController();
+  final TextEditingController emailController = TextEditingController();
+  final TextEditingController passwordController = TextEditingController();
+  final AuthService authService = AuthService();
+
+  void registerUser() async {
+    final user = User(
+      fullname: fullnameController.text.trim(),
+      username: usernameController.text.trim(),
+      email: emailController.text.trim(),
+      password: passwordController.text,
+    );
+
+    final success = await authService.register(user);
+
+    if (success) {
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(builder: (_) => const LoginPage()),
+      );
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Register gagal. Coba lagi.')),
+      );
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -98,6 +133,7 @@ class RegisterPage extends StatelessWidget {
                       ),
                       const SizedBox(height: 16),
                       TextField(
+                        controller: fullnameController,
                         decoration: InputDecoration(
                           hintText: 'Fullname',
                           border: OutlineInputBorder(
@@ -107,8 +143,9 @@ class RegisterPage extends StatelessWidget {
                       ),
                       const SizedBox(height: 12),
                       TextField(
+                        controller: usernameController,
                         decoration: InputDecoration(
-                          hintText: 'Usegioitrname',
+                          hintText: 'Username',
                           border: OutlineInputBorder(
                             borderRadius: BorderRadius.circular(8.0),
                           ),
@@ -116,6 +153,7 @@ class RegisterPage extends StatelessWidget {
                       ),
                       const SizedBox(height: 12),
                       TextField(
+                        controller: emailController,
                         decoration: InputDecoration(
                           hintText: 'Email',
                           border: OutlineInputBorder(
@@ -125,6 +163,7 @@ class RegisterPage extends StatelessWidget {
                       ),
                       const SizedBox(height: 12),
                       TextField(
+                        controller: passwordController,
                         obscureText: true,
                         decoration: InputDecoration(
                           hintText: 'Password',
@@ -138,13 +177,7 @@ class RegisterPage extends StatelessWidget {
                         width: double.infinity,
                         height: 48,
                         child: ElevatedButton(
-                          onPressed: () {
-                            Navigator.pushReplacement(
-                              context,
-                              MaterialPageRoute(builder: (_) => const MainLayout()),
-                            );
-                          },
-
+                          onPressed: registerUser,
                           style: ElevatedButton.styleFrom(
                             backgroundColor: const Color(0xFF1F4D7B),
                             shape: RoundedRectangleBorder(

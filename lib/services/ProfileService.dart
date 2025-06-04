@@ -8,8 +8,16 @@ class ProfileService {
 
   Future<User?> fetchUserProfile() async {
     try {
+      // Ambil userId dari SharedPreferences
+      final prefs = await SharedPreferences.getInstance();
+      final userId = prefs.getInt('userId');
 
-      final response = await http.get(Uri.parse("$baseUrl/18")); //kalau mau testing coba masukkan id nya '3'
+      if (userId == null) {
+        print("User ID not found in SharedPreferences.");
+        return null;
+      }
+
+      final response = await http.get(Uri.parse("$baseUrl/$userId"));
 
       if (response.statusCode == 200) {
         final data = json.decode(response.body);

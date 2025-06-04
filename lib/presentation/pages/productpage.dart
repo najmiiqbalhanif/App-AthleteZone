@@ -1,39 +1,70 @@
 import 'package:flutter/material.dart';
+import 'package:intl/intl.dart';
 import 'cartpage.dart';
 import 'productPageDetail.dart';
+import '../../models/Product.dart';
+import '../../services/ProductService.dart';
 
-class ProductDetailPage extends StatefulWidget {
-  final List<String> imageUrls;
-  final String title;
-  final String category;
-  final String price;
+class ProductPage extends StatefulWidget {
+  final int? id;
 
-  const ProductDetailPage({
+  const ProductPage({
     Key? key,
-    required this.imageUrls,
-    required this.title,
-    required this.category,
-    required this.price,
+    required this.id,
   }) : super(key: key);
 
   @override
-  State<ProductDetailPage> createState() => _ProductDetailPageState();
+  State<ProductPage> createState() => _ProductPageState();
 }
 
-class _ProductDetailPageState extends State<ProductDetailPage> {
-  String _selectedSize = "Select Size"; // Variabel untuk menyimpan ukuran yang dipilih
+class _ProductPageState extends State<ProductPage> {
+  Product? product;
+  bool isLoading = true;
+  String _selectedSize = "Select Size";
   final PageController _pageController = PageController();
   int _currentPage = 0;
   bool _isFavorited = false;
 
+  @override
+  void initState() {
+    super.initState();
+    fetchProductDetail();
+  }
+
+  void fetchProductDetail() async {
+    try {
+      Product fetchedProduct = await ProductService().getProductById(widget.id!);
+      setState(() {
+        product = fetchedProduct;
+        isLoading = false;
+      });
+    } catch (e) {
+      print('Error fetching product: $e');
+      setState(() {
+        isLoading = false;
+      });
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
+    if (isLoading) {
+      return const Scaffold(
+        body: Center(child: CircularProgressIndicator()),
+      );
+    }
+
+    if (product == null) {
+      return const Scaffold(
+        body: Center(child: Text('Failed to load product')),
+      );
+    }
+
     return Scaffold(
       backgroundColor: Colors.white,
       appBar: AppBar(
-        title: Text(widget.title),
-        centerTitle: true, // Tambahkan ini
+        title: Text(product!.name),
+        centerTitle: true,
         backgroundColor: Colors.white,
         elevation: 0,
         foregroundColor: Colors.black,
@@ -50,51 +81,24 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
           children: [
             // Carousel
             SizedBox(
-              height: 300,
-              child: PageView.builder(
-                controller: _pageController,
-                itemCount: widget.imageUrls.length,
-                onPageChanged: (index) {
-                  setState(() {
-                    _currentPage = index;
-                  });
-                },
-                itemBuilder: (context, index) {
-                  return Image.asset(
-                    widget.imageUrls[index],
-                    fit: BoxFit.cover,
-                  );
-                },
+              height: 350,
+              child: Image.network(
+                product!.photoUrl,
+                height: 150,
+                width: double.infinity,
+                fit: BoxFit.cover,
+                errorBuilder: (context, error, stackTrace) =>
+                const Center(child: Icon(Icons.broken_image)),
               ),
             ),
 
-            const SizedBox(height: 8),
-            Center(
-              child: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: List.generate(
-                  widget.imageUrls.length,
-                      (index) => AnimatedContainer(
-                    duration: const Duration(milliseconds: 300),
-                    margin: const EdgeInsets.symmetric(horizontal: 4),
-                    width: _currentPage == index ? 12 : 8,
-                    height: _currentPage == index ? 12 : 8,
-                    decoration: BoxDecoration(
-                      color: _currentPage == index ? Colors.black : Colors.grey,
-                      shape: BoxShape.circle,
-                    ),
-                  ),
-                ),
-              ),
-            ),
-
-            const SizedBox(height: 16),
+            const SizedBox(height: 20),
 
             // Title
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 16.0),
               child: Text(
-                widget.title,
+                product!.name,
                 style: Theme.of(context).textTheme.titleLarge?.copyWith(
                   fontWeight: FontWeight.bold,
                 ),
@@ -105,27 +109,26 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 16.0),
               child: Text(
-                widget.category,
+                product!.category,
                 style: Theme.of(context).textTheme.titleMedium?.copyWith(
                   color: Colors.grey[700],
                 ),
               ),
             ),
-
             const SizedBox(height: 8),
 
             // Price
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 16.0),
               child: Text(
-                widget.price,
+                NumberFormat.currency(locale: 'id', symbol: 'Rp')
+                    .format(product!.price),
                 style: Theme.of(context).textTheme.titleMedium?.copyWith(
                   fontWeight: FontWeight.bold,
                   fontSize: 18,
                 ),
               ),
             ),
-
             const SizedBox(height: 16),
 
             // Color options
@@ -136,51 +139,17 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
                   _ColorOption(
                     color: Colors.white,
                     isSelected: _currentPage == 0,
-                    onTap: () {
-                      _pageController.jumpToPage(0);
-                    },
+                    onTap: () => _pageController.jumpToPage(0),
                   ),
                   const SizedBox(width: 8),
                   _ColorOption(
                     color: Colors.black,
                     isSelected: _currentPage == 1,
-                    onTap: () {
-                      _pageController.jumpToPage(1);
-                    },
-                  ),
-                  const SizedBox(width: 8),
-                  GestureDetector(
-                    onTap: () {
-                      _pageController.jumpToPage(2);
-                    },
-                    child: Container(
-                      padding: const EdgeInsets.symmetric(
-                          horizontal: 12, vertical: 8),
-                      decoration: BoxDecoration(
-                        border: Border.all(color: const Color(0xFF041761)),
-                        borderRadius: BorderRadius.circular(8),
-                        color: _currentPage == 2
-                            ? Colors.black
-                            : Colors.transparent,
-                      ),
-                      child: Row(
-                        children: [
-                          const Icon(Icons.color_lens, size: 20, color: const Color(0xFF041761)),
-                          const SizedBox(width: 4),
-                          Text(
-                            "Design Your Own",
-                            style: TextStyle(
-                              color: Colors.black,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
+                    onTap: () => _pageController.jumpToPage(1),
                   ),
                 ],
               ),
             ),
-
             const SizedBox(height: 16),
 
             // Action Buttons
@@ -194,7 +163,8 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
                         showModalBottomSheet(
                           context: context,
                           shape: const RoundedRectangleBorder(
-                            borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+                            borderRadius:
+                            BorderRadius.vertical(top: Radius.circular(24)),
                           ),
                           builder: (BuildContext context) {
                             return _SizeSelectorSheet(
@@ -203,14 +173,15 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
                                   _selectedSize = size;
                                 });
                                 Navigator.pop(context);
-                              }
+                              },
                             );
                           },
                         );
                       },
                       style: OutlinedButton.styleFrom(
                         foregroundColor: Colors.black,
-                        side: const BorderSide(color: const Color(0xFF041761)),
+                        side:
+                        const BorderSide(color: Color(0xFF041761)),
                         padding: const EdgeInsets.symmetric(vertical: 16),
                       ),
                       child: Text(_selectedSize),
@@ -228,7 +199,7 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
                         );
                       },
                       style: ElevatedButton.styleFrom(
-                          backgroundColor: const Color(0xFF041761),
+                        backgroundColor: const Color(0xFF041761),
                         foregroundColor: Colors.white,
                         padding: const EdgeInsets.symmetric(vertical: 16),
                       ),
@@ -245,66 +216,45 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
                       },
                       style: OutlinedButton.styleFrom(
                         foregroundColor: Colors.black,
-                        side: const BorderSide(color: const Color(0xFF041761)),
+                        side:
+                        const BorderSide(color: Color(0xFF041761)),
                         padding: const EdgeInsets.symmetric(vertical: 16),
                       ),
-                      child: Text(_isFavorited ? "Favorited ❤︎" : "Favorite"),
+                      child:
+                      Text(_isFavorited ? "Favorited ❤︎" : "Favorite"),
                     ),
-
                   ),
                 ],
               ),
             ),
-
             const SizedBox(height: 16),
 
-            // Info, Description, Details
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 16.0),
               child: Text(
-                "This product is excluded from all promotions and discounts.",
-                style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                  color: Colors.grey[700],
-                ),
+                'DUMMY TEST',
+                style: Theme.of(context)
+                    .textTheme
+                    .bodyMedium
+                    ?.copyWith(height: 1.4),
               ),
             ),
             const SizedBox(height: 16),
+
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 16.0),
-              child: Text(
-                "Comfortable, durable and timeless—it's number one for a reason. "
-                    "The classic '80s construction pairs smooth leather with bold "
-                    "details for style that tracks whether you're on the court or on the go.",
-                style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                  height: 1.4,
-                ),
-              ),
-            ),
-            const SizedBox(height: 16),
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16.0),
-              child: Text(
-                "• Shown: White/White\n"
-                    "• Style: CW2288-111\n"
-                    "• Country/Region of Origin: India, Vietnam",
-                style: Theme.of(context).textTheme.bodyMedium,
-              ),
-            ),
-            const SizedBox(height: 16),
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16.0),
-                child: InkWell(
-                  onTap: () {
-                    Navigator.of(context).push(_createRoute());
-                  },
-                  child: Text(
-                    "View Product Details",
-                    style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                      color: const Color(0xFF041761),
-                      decoration: TextDecoration.underline,
-                    ),
+              child: InkWell(
+                onTap: () {
+                  Navigator.of(context).push(_createRoute());
+                },
+                child: Text(
+                  "View Product Details",
+                  style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                    color: const Color(0xFF041761),
+                    decoration: TextDecoration.underline,
                   ),
-                )
+                ),
+              ),
             ),
             const SizedBox(height: 32),
           ],
@@ -347,13 +297,14 @@ class _ColorOption extends StatelessWidget {
 }
 
 class _SizeSelectorSheet extends StatelessWidget {
-  final Function(String) onSizeSelected; // Callback untuk mengirim ukuran yang dipilih
+  final Function(String) onSizeSelected;
 
   const _SizeSelectorSheet({super.key, required this.onSizeSelected});
 
   @override
   Widget build(BuildContext context) {
-    final List<String> sizes = List.generate(10, (index) => 'EU ${38 + index}');
+    final List<String> sizes =
+    List.generate(10, (index) => 'EU ${38 + index}');
 
     return Container(
       padding: const EdgeInsets.all(16),
@@ -377,10 +328,7 @@ class _SizeSelectorSheet extends StatelessWidget {
           ),
           const Text(
             "Select Size",
-            style: TextStyle(
-              fontSize: 18,
-              fontWeight: FontWeight.bold,
-            ),
+            style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
           ),
           const SizedBox(height: 16),
           Wrap(
@@ -388,21 +336,16 @@ class _SizeSelectorSheet extends StatelessWidget {
             runSpacing: 12,
             children: sizes.map((size) {
               return GestureDetector(
-                onTap: () {
-                  onSizeSelected(size); // Panggil callback dengan ukuran yang dipilih
-                },
+                onTap: () => onSizeSelected(size),
                 child: Container(
-                  width: 80, // Ukuran simetris
+                  width: 80,
                   height: 48,
                   alignment: Alignment.center,
                   decoration: BoxDecoration(
                     border: Border.all(color: const Color(0xFF041761)),
                     borderRadius: BorderRadius.circular(8),
                   ),
-                  child: Text(
-                    size,
-                    style: const TextStyle(fontSize: 16),
-                  ),
+                  child: Text(size, style: const TextStyle(fontSize: 16)),
                 ),
               );
             }).toList(),
@@ -413,25 +356,20 @@ class _SizeSelectorSheet extends StatelessWidget {
   }
 }
 
-
-
 Route _createRoute() {
   return PageRouteBuilder(
     pageBuilder: (context, animation, secondaryAnimation) =>
     const productPageDetail(),
     transitionsBuilder: (context, animation, secondaryAnimation, child) {
-      const begin = Offset(1.0, 0.0); // slide from right
+      const begin = Offset(1.0, 0.0);
       const end = Offset.zero;
       const curve = Curves.ease;
 
-      final tween = Tween(begin: begin, end: end).chain(CurveTween(curve: curve));
+      final tween =
+      Tween(begin: begin, end: end).chain(CurveTween(curve: curve));
       final offsetAnimation = animation.drive(tween);
 
-      return SlideTransition(
-        position: offsetAnimation,
-        child: child,
-      );
+      return SlideTransition(position: offsetAnimation, child: child);
     },
   );
 }
-

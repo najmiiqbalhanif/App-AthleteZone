@@ -82,12 +82,7 @@ class _HomePageState extends State<HomePage> {
                           Navigator.push(
                             context,
                             MaterialPageRoute(
-                              builder: (context) => ProductDetailPage(
-                                imageUrls: [product.photoUrl],
-                                title: product.name,
-                                category: product.category,
-                                price: 'Rp ${product.price.toStringAsFixed(0)}',
-                              ),
+                              builder: (context) => ProductPage(id: product.id),
                             ),
                           );
                         },

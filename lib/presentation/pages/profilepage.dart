@@ -1,38 +1,65 @@
 import 'package:flutter/material.dart';
+import '../../services/ProfileService.dart';
+import '../../models/user.dart';
 import 'editprofilepage.dart';
 
-class ProfilePage extends StatelessWidget {
+class ProfilePage extends StatefulWidget {
   const ProfilePage({super.key});
+
+  @override
+  State<ProfilePage> createState() => _ProfilePageState();
+}
+
+class _ProfilePageState extends State<ProfilePage> {
+  User? user;
+  bool isLoading = true;
+
+  @override
+  void initState() {
+    super.initState();
+    loadUserProfile();
+  }
+
+  Future<void> loadUserProfile() async {
+    final fetchedUser = await ProfileService().fetchUserProfile();
+    setState(() {
+      user = fetchedUser;
+      isLoading = false;
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Colors.white,
       body: SafeArea(
-        child: Column(
+        child: isLoading
+            ? const Center(child: CircularProgressIndicator())
+            : Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Bagian atas: ikon navigasi atau teks (bisa dikembangkan)
-
             const SizedBox(height: 25),
-
-            // Avatar dan nama
             Center(
               child: Column(
-                children: const [
+                children: [
                   CircleAvatar(
                     radius: 48,
                     backgroundColor: Colors.grey,
-                    child: Icon(
+                    backgroundImage: user!.profileImage != null && user!.profileImage!.isNotEmpty
+                        ? NetworkImage(user!.profileImage!)
+                        : null,
+                    child: user!.profileImage == null || user!.profileImage!.isEmpty
+                        ? const Icon(
                       Icons.person,
                       size: 60,
                       color: Colors.white,
-                    ),
+                    )
+                        : null,
                   ),
-                  SizedBox(height: 12),
+                  const SizedBox(height: 12),
                   Text(
-                    'Najmi Hanif',
-                    style: TextStyle(
+                    user!.fullname,
+                    style: const TextStyle(
                       fontSize: 20,
                       fontWeight: FontWeight.w500,
                     ),
@@ -40,10 +67,7 @@ class ProfilePage extends StatelessWidget {
                 ],
               ),
             ),
-
             const SizedBox(height: 16),
-
-            // Tombol Edit Profil
             Center(
               child: OutlinedButton(
                 onPressed: () {
@@ -68,10 +92,7 @@ class ProfilePage extends StatelessWidget {
                 ),
               ),
             ),
-
             const SizedBox(height: 42),
-
-            // Menu bar (Pesanan, Akses, Acara, Pengaturan)
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 16.0),
               child: Row(
@@ -84,10 +105,7 @@ class ProfilePage extends StatelessWidget {
                 ],
               ),
             ),
-
             const SizedBox(height: 32),
-
-            // Hadiah Anggota
             const Padding(
               padding: EdgeInsets.symmetric(horizontal: 16.0),
               child: ListTile(
@@ -96,10 +114,7 @@ class ProfilePage extends StatelessWidget {
                 trailing: Icon(Icons.chevron_right),
               ),
             ),
-
             const Divider(),
-
-
           ],
         ),
       ),
@@ -107,7 +122,6 @@ class ProfilePage extends StatelessWidget {
   }
 }
 
-// Komponen untuk menu atas
 class _MenuItem extends StatelessWidget {
   final IconData icon;
   final String label;
@@ -128,4 +142,3 @@ class _MenuItem extends StatelessWidget {
     );
   }
 }
-

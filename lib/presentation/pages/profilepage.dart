@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import '../../services/ProfileService.dart';
+import '../../services/UserService.dart';
 import '../../models/user.dart';
 import 'editprofilepage.dart';
 
@@ -21,11 +21,20 @@ class _ProfilePageState extends State<ProfilePage> {
   }
 
   Future<void> loadUserProfile() async {
-    final fetchedUser = await ProfileService().fetchUserProfile();
+    final fetchedUser = await UserService().fetchUserProfile();
     setState(() {
       user = fetchedUser;
       isLoading = false;
     });
+  }
+
+  void _showSuccessMessage() {
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(
+        content: Text('Profil berhasil diperbarui'),
+        backgroundColor: Colors.green,
+      ),
+    );
   }
 
   @override
@@ -64,17 +73,36 @@ class _ProfilePageState extends State<ProfilePage> {
                       fontWeight: FontWeight.w500,
                     ),
                   ),
+                  const SizedBox(height: 4),
+                  Text(
+                    '@${user!.username}',
+                    style: const TextStyle(
+                      fontSize: 14,
+                      color: Colors.grey,
+                    ),
+                  ),
                 ],
               ),
             ),
             const SizedBox(height: 16),
             Center(
               child: OutlinedButton(
-                onPressed: () {
-                  Navigator.push(
+                onPressed: () async {
+                  final result = await Navigator.push(
                     context,
                     MaterialPageRoute(builder: (context) => const EditProfilePage()),
                   );
+                  if (result == true) {
+                    await loadUserProfile();
+                    if (mounted) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(
+                            content: Text('Profil berhasil diperbarui'),
+                            backgroundColor: Colors.green
+                        ),
+                      );
+                    }
+                  }
                 },
                 style: OutlinedButton.styleFrom(
                   shape: RoundedRectangleBorder(

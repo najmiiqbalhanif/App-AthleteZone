@@ -1,6 +1,7 @@
+// lib/mainLayout.dart
 import 'package:flutter/material.dart';
 import 'pages/homepage.dart';
-import 'pages/shoppage.dart';
+import 'pages/shoppage.dart'; // Ini akan menjadi tab yang memuat Navigator bersarang
 import 'pages/ordersPage.dart';
 import 'pages/cartpage.dart';
 import 'pages/profilepage.dart';
@@ -15,12 +16,13 @@ class MainLayout extends StatefulWidget {
 class _MainLayoutState extends State<MainLayout> {
   int _selectedIndex = 0;
 
+  // Daftar halaman untuk BottomNavigationBar
   final List<Widget> _pages = [
-    const HomePage(),       // Halaman 0 - Home
-    const ShopPage(),       // Halaman 1 - Shop
-    const OrdersPage(),  // Halaman 2 - Favorites
-    const CartPage(),        // Halaman 3 - Bag
-    const ProfilePage(),    // Halaman 4 - Profile
+    const HomePage(),
+    const ShopPage(), // ShopPage akan memiliki Navigator internalnya sendiri
+    const OrdersPage(),
+    const CartPage(),
+    const ProfilePage(),
   ];
 
   @override
@@ -31,7 +33,7 @@ class _MainLayoutState extends State<MainLayout> {
         title: SizedBox(
           height: 45,
           child: Image.asset(
-            'assets/images/athletezone-logo-mini.png',
+            'assets/images/athletezone-logo-mini.png', // Pastikan path ini benar
             fit: BoxFit.contain,
           ),
         ),
@@ -42,7 +44,18 @@ class _MainLayoutState extends State<MainLayout> {
       ),
       bottomNavigationBar: BottomNavigationBar(
         currentIndex: _selectedIndex,
-        onTap: (index) => setState(() => _selectedIndex = index),
+        onTap: (index) {
+          // Ketika berpindah tab, pastikan untuk kembali ke root dari Navigator internal
+          if (_selectedIndex != index) {
+            // Ini untuk memastikan bahwa ketika Anda beralih tab, stack navigasi tab sebelumnya direset
+            // Misalnya, jika Anda ada di ProductPage di tab Shop, dan beralih ke Home,
+            // saat kembali ke Shop, Anda akan kembali ke halaman utama Shop, bukan ProductPage.
+            // Anda bisa menyesuaikan perilaku ini jika ingin mempertahankan stack.
+            // Untuk mereset stack, Anda bisa menggunakan Navigator.popUntil(context, (route) => route.isFirst);
+            // Tapi ini memerlukan GlobalKey untuk setiap Navigator, yang akan kita lakukan di ShopPage.
+          }
+          setState(() => _selectedIndex = index);
+        },
         type: BottomNavigationBarType.fixed,
         items: const [
           BottomNavigationBarItem(
@@ -75,4 +88,3 @@ class _MainLayoutState extends State<MainLayout> {
     );
   }
 }
-

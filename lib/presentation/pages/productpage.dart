@@ -5,6 +5,17 @@ import 'cartpage.dart';
 import 'productPageDetail.dart';
 import '../../models/Product.dart';
 import '../../services/ProductService.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+
+// Fungsi async untuk dapatkan userId dari SharedPreferences
+Future<int?> getUserId() async {
+  final prefs = await SharedPreferences.getInstance();
+  // Misal userId disimpan dengan key 'userId'
+  if (prefs.containsKey('userId')) {
+    return prefs.getInt('userId');
+  }
+  return null; // Kalau tidak ada userId
+}
 
 // Dummy review data (moved here for global access or can be encapsulated)
 final List<Map<String, dynamic>> reviews = [
@@ -182,7 +193,7 @@ class _ProductPageState extends State<ProductPage> {
                       ),
                       const SizedBox(height: 4),
                       Text(
-                        "($totalItems Item(s) Total)",
+                        "$totalItems Item(s) Total",
                         style: Theme.of(context).textTheme.bodyLarge?.copyWith(color: Colors.grey[700]),
                       ),
                     ],
@@ -438,8 +449,17 @@ class _ProductPageState extends State<ProductPage> {
                   Expanded(
                     child: ElevatedButton(
                       onPressed: () async {
-                        int userId = 1; // Replace with actual active user ID
+                        int? userId = await getUserId();
+                        if (userId == null) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(content: Text('Silakan login terlebih dahulu')),
+                          );
+                          return;
+                        }
                         await addToCart(userId, product!.id!);
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(content: Text('Produk berhasil ditambahkan ke keranjang')),
+                        );
                       },
                       style: ElevatedButton.styleFrom(
                         backgroundColor: Colors.blueAccent,

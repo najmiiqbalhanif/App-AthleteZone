@@ -457,9 +457,6 @@ class _ProductPageState extends State<ProductPage> {
                           return;
                         }
                         await addToCart(userId, product!.id!);
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(content: Text('Produk berhasil ditambahkan ke keranjang')),
-                        );
                       },
                       style: ElevatedButton.styleFrom(
                         backgroundColor: Colors.blueAccent,

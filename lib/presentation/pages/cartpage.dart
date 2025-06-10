@@ -1,5 +1,8 @@
 import 'package:flutter/material.dart';
-import 'package:helloworld/presentation/pages/checkoutPayment.dart';
+import '../../services/CartService.dart';
+import '../../models/CartItem.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+
 
 class CartPage extends StatefulWidget {
   const CartPage({super.key});
@@ -9,78 +12,119 @@ class CartPage extends StatefulWidget {
 }
 
 class _CartPageState extends State<CartPage> {
+  final CartService _cartService = CartService();
+  late Future<int?> _futureUserId;
+
+  @override
+  void initState() {
+    super.initState();
+    _futureUserId = getUserId();
+  }
+
+  Future<int?> getUserId() async {
+    final prefs = await SharedPreferences.getInstance();
+    return prefs.getInt('userId');
+  }
+
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: Colors.white,
-      appBar: AppBar(
-        backgroundColor: Colors.white,
-        title: Text(
-            'Cart',
-            style: TextStyle(
-              fontWeight: FontWeight.bold
-            ),
-        ),
-      ),
-      body: Column(
-        children: [
-          // Daftar Produk
-          Expanded(
-            child: ListView(
-              padding: const EdgeInsets.all(16),
-              children: [
-                _buildCartItem(context, 'assets/images/caps_nike.png'),
-                const Divider(),
-                _buildCartItem(context, 'assets/images/caps_adidas.png'),
-              ],
-            ),
-          ),
+    return FutureBuilder<int?>(
+      future: _futureUserId,
+      builder: (context, userSnapshot) {
+        if (userSnapshot.connectionState == ConnectionState.waiting) {
+          return const Center(child: CircularProgressIndicator());
+        } else if (!userSnapshot.hasData || userSnapshot.data == null) {
+          return const Center(child: Text("User not found"));
+        }
 
-          // Total dan Checkout
-          Container(
-            padding: const EdgeInsets.all(16),
-            decoration: BoxDecoration(
-              border: Border(top: BorderSide(color: Colors.grey.shade300)),
-              color: Colors.white,
-            ),
-            child: Column(
-              children: [
-                _buildTotalRow('Subtotal', 'Rp 7.647.000'),
-                _buildTotalRow('Shipping', 'Standard - Free'),
-                _buildTotalRow('Estimated Total', 'Rp 7.647.000 + Tax', isBold: true),
-                const SizedBox(height: 16),
-                SizedBox(
-                  width: double.infinity,
-                  child: ElevatedButton(
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: const Color(0xFF041761),
-                      padding: const EdgeInsets.symmetric(vertical: 16),
-                    ),
-                    onPressed: () {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(builder: (context) => CheckoutPage()),
-                      );
-                    },
-                    child: const Text(
-                      'Checkout',
-                      style: TextStyle(
-                        color: Colors.white,
-                        fontSize: 16,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
+        final userId = userSnapshot.data!;
+
+        return FutureBuilder<List<CartItem>>(
+          future: _cartService.getCartItems(userId),
+          builder: (context, snapshot) {
+            if (snapshot.connectionState == ConnectionState.waiting) {
+              return const Center(child: CircularProgressIndicator());
+            } else if (snapshot.hasError) {
+              return Center(child: Text("Error: ${snapshot.error}"));
+            } else if (!snapshot.hasData || snapshot.data!.isEmpty) {
+              return const Center(child: Text("Your cart is empty."));
+            } else {
+              List<CartItem> cartItems = snapshot.data!;
+              double totalPrice = _cartService.getTotalPrice();
+
+              return Scaffold(
+                backgroundColor: Colors.white,
+                appBar: AppBar(
+                  backgroundColor: Colors.white,
+                  title: const Text(
+                    'Cart',
+                    style: TextStyle(fontWeight: FontWeight.bold),
                   ),
                 ),
-              ],
-            ),
-          )
-        ],
-      ),
+                body: Column(
+                  children: [
+                    Expanded(
+                      child: ListView.builder(
+                        padding: const EdgeInsets.all(16),
+                        itemCount: cartItems.length,
+                        itemBuilder: (context, index) {
+                          return _buildCartItem(context, cartItems[index]);
+                        },
+                      ),
+                    ),
+                    Container(
+                      padding: const EdgeInsets.all(16),
+                      decoration: BoxDecoration(
+                        border: Border(top: BorderSide(color: Colors.grey.shade300)),
+                        color: Colors.white,
+                      ),
+                      child: Column(
+                        children: [
+                          _buildTotalRow('Subtotal', 'Rp ${totalPrice.toStringAsFixed(0).replaceAllMapped(
+                            RegExp(r'(\d{1,3})(?=(\d{3})+(?!\d))'),
+                              (match) => '${match[1]}.',)}'),
+                          _buildTotalRow('Shipping', 'Standard - Free'),
+                          _buildTotalRow('Estimated Total', 'Rp ${totalPrice.toStringAsFixed(0).replaceAllMapped(
+                            RegExp(r'(\d{1,3})(?=(\d{3})+(?!\d))'),
+                              (match) => '${match[1]}.',)} + Tax', isBold: true),
+
+                          const SizedBox(height: 16),
+                          SizedBox(
+                            width: double.infinity,
+                            child: ElevatedButton(
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: const Color(0xFF041761),
+                                padding: const EdgeInsets.symmetric(vertical: 16),
+                              ),
+                              onPressed: () {
+                                // Implementasi navigasi ke halaman checkout
+                              },
+                              child: const Text(
+                                'Checkout',
+                                style: TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+              );
+            }
+          },
+        );
+      },
     );
   }
 
-  Widget _buildCartItem(BuildContext context, String imagePath) {
+
+  // Widget untuk membangun tampilan setiap item dalam keranjang
+  Widget _buildCartItem(BuildContext context, CartItem cartItem) {
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 8.0),
       child: Row(
@@ -97,19 +141,18 @@ class _CartPageState extends State<CartPage> {
                 decoration: BoxDecoration(
                   borderRadius: BorderRadius.circular(8),
                   image: DecorationImage(
-                    image: AssetImage(imagePath),
+                    image: NetworkImage(cartItem.product.photoUrl),  // Menggunakan photoUrl dari Product
                     fit: BoxFit.cover,
                   ),
                 ),
               ),
-              // Teks tambahan di bawah gambar
               const SizedBox(height: 4),
               Text(
-                "Qty: 2", // Teks yang ingin ditambahkan
+                "Qty: ${cartItem.quantity}",  // Menampilkan jumlah
                 style: TextStyle(
-                  color: Colors.black,
-                  fontSize: 16,
-                  fontWeight: FontWeight.bold
+                    color: Colors.black,
+                    fontSize: 16,
+                    fontWeight: FontWeight.bold
                 ),
               ),
             ],
@@ -122,43 +165,31 @@ class _CartPageState extends State<CartPage> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  "Nike Air Max Dn8",
+                  cartItem.product.name,  // Nama produk
                   style: Theme.of(context).textTheme.titleMedium?.copyWith(
                       fontWeight: FontWeight.bold
                   ),
                 ),
                 const SizedBox(height: 4),
                 Text(
-                  "Men's Shoes\nWhite",
+                  cartItem.product.category,  // Kategori produk
                   style: TextStyle(
                     color: Colors.grey[600],
                     fontSize: 14,
                   ),
                 ),
                 const SizedBox(height: 8),
-                Row(
-                  children: [
-                    Text(
-                      "42",
-                      style: TextStyle(
-                        color: Colors.grey[800],
-                        fontSize: 14,
-                      ),
-                    ),
-                    const Spacer(),
-                  ],
-                ),
               ],
             ),
           ),
 
           // Price and Quantity Control
-
           Column(
             crossAxisAlignment: CrossAxisAlignment.end,
             children: [
               Text(
-                "Rp6.098.000",
+                "Rp ${cartItem.totalPrice.toStringAsFixed(0).replaceAllMapped(RegExp(r'(\d{1,3})(?=(\d{3})+(?!\d))'),(match) => '${match[1]}.',)}",  // Total harga untuk item ini
+
                 style: Theme.of(context).textTheme.bodyLarge?.copyWith(
                     fontWeight: FontWeight.bold
                 ),
@@ -170,6 +201,7 @@ class _CartPageState extends State<CartPage> {
     );
   }
 
+  // Widget untuk menampilkan baris total (Subtotal, Shipping, Estimated Total)
   Widget _buildTotalRow(String label, String value, {bool isBold = false}) {
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 4),

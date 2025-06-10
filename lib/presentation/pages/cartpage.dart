@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import '../../services/CartService.dart';
 import '../../models/CartItem.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:helloworld/presentation/pages/checkoutPayment.dart';
+
 
 
 class CartPage extends StatefulWidget {
@@ -97,7 +99,16 @@ class _CartPageState extends State<CartPage> {
                                 padding: const EdgeInsets.symmetric(vertical: 16),
                               ),
                               onPressed: () {
-                                // Implementasi navigasi ke halaman checkout
+                                // Ensure 'context' is available here (it usually is within a Widget's build method or State class)
+                                Navigator.push(
+                                  context,
+                                  MaterialPageRoute(
+                                    builder: (context) => CheckoutPage(
+                                      cartItems: cartItems, // Pass cart items
+                                      totalPrice: totalPrice,
+                                    ), // Correctly instantiating your widget
+                                  ),
+                                );
                               },
                               child: const Text(
                                 'Checkout',

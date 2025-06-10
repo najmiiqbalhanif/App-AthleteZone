@@ -30,9 +30,11 @@ class _LoginPageState extends State<LoginPage> {
     if (response.statusCode == 200) {
       final responseData = jsonDecode(response.body);
       final userId = responseData['id'];
+      final userFullname = responseData['fullName']; // Ambil fullname dari respons API
 
       final prefs = await SharedPreferences.getInstance();
       await prefs.setInt('userId', userId);
+      await prefs.setString('userName', userFullname); // Simpan fullname ke SharedPreferences
 
       Navigator.pushReplacement(
         context,

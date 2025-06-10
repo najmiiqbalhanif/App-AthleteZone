@@ -14,11 +14,24 @@ class HomePage extends StatefulWidget {
 class _HomePageState extends State<HomePage> {
   List<Product> _products = [];
   bool _isLoading = true;
+  String _userName = 'Pengguna'; // Nilai default jika nama belum tersedia
 
   @override
   void initState() {
     super.initState();
+    _loadUserName(); // Panggil fungsi untuk memuat nama pengguna
     fetchProducts();
+  }
+
+  // Fungsi baru untuk memuat nama pengguna dari SharedPreferences
+  Future<void> _loadUserName() async {
+    final prefs = await SharedPreferences.getInstance();
+    final userName = prefs.getString('userName'); // Ambil nilai dari kunci 'userName'
+    if (userName != null && userName.isNotEmpty) {
+      setState(() {
+        _userName = userName;
+      });
+    }
   }
 
   void fetchProducts() async {
@@ -44,9 +57,9 @@ class _HomePageState extends State<HomePage> {
         surfaceTintColor: Colors.transparent,
         backgroundColor: Colors.white,
         elevation: 0,
-        title: const Text(
-          "Welcome, Hanif",
-          style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold, color: Colors.black),
+        title: Text(
+          "Selamat Datang, $_userName", // Gunakan nama pengguna yang dimuat di sini
+          style: const TextStyle(fontSize: 22, fontWeight: FontWeight.bold, color: Colors.black),
         ),
       ),
       body: SingleChildScrollView(
@@ -56,12 +69,12 @@ class _HomePageState extends State<HomePage> {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               const Text(
-                "Top Picks for You",
+                "Pilihan Terbaik untuk Anda",
                 style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
               ),
               const SizedBox(height: 4),
               const Text(
-                "Recommended products",
+                "Produk rekomendasi",
                 style: TextStyle(fontSize: 14, color: Colors.grey),
               ),
               const SizedBox(height: 16),

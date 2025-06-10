@@ -1,7 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
-import 'package:shared_preferences/shared_preferences.dart';
-import '../../services/OrderService.dart';
 
 class OrdersPage extends StatefulWidget {
   const OrdersPage({super.key});
@@ -11,35 +9,51 @@ class OrdersPage extends StatefulWidget {
 }
 
 class _OrdersPageState extends State<OrdersPage> {
-  List<Map<String, dynamic>> _orders = [];
+  final List<Map<String, dynamic>> orders = [
+    {
+      'orderId': 'ORD001',
+      'date': '2024-05-30',
+      'totalAmount': 1200000,
+      'items': [
+        {
+          'name': 'Nike Cap',
+          'image': 'assets/images/caps_nike.png',
+          'qty': 2,
+          'status': 'paid',
+          'price': 300000,
+          'size': 'L',
+          'description': "Men's Cap\nBlack",
+        },
+        {
+          'name': 'Nike Socks',
+          'image': 'assets/images/shoes1.png',
+          'qty': 1,
+          'status': 'paid',
+          'price': 600000,
+          'size': 'Free Size',
+          'description': "Socks\nWhite",
+        },
+      ]
+    },
+    {
+      'orderId': 'ORD002',
+      'date': '2024-06-01',
+      'totalAmount': 899000,
+      'items': [
+        {
+          'name': 'Adidas Cap',
+          'image': 'assets/images/caps_adidas.png',
+          'qty': 1,
+          'status': 'on process',
+          'price': 899000,
+          'size': 'M',
+          'description': "Men's Cap\nBlue",
+        },
+      ]
+    },
+  ];
 
   final NumberFormat currencyFormat = NumberFormat.currency(locale: 'id_ID', symbol: 'Rp', decimalDigits: 0);
-
-  @override
-  void initState() {
-    super.initState();
-    _loadOrders();
-  }
-
-  Future<void> _loadOrders() async {
-    try {
-      final fetchedOrders = await _fetchOrders();
-      setState(() {
-        _orders = fetchedOrders;
-      });
-    } catch (e) {
-      print('Error fetching orders: $e');
-    }
-  }
-
-  Future<List<Map<String, dynamic>>> _fetchOrders() async {
-    final prefs = await SharedPreferences.getInstance();
-    final userId = prefs.getInt('userId');
-    if (userId == null) return [];
-    final orderService = OrderService(baseUrl: 'http://10.0.2.2:8080');
-    final orders = await orderService.getOrderByUserId(userId);
-    return orders;
-  }
 
   @override
   Widget build(BuildContext context) {
@@ -52,13 +66,11 @@ class _OrdersPageState extends State<OrdersPage> {
           style: TextStyle(fontWeight: FontWeight.bold),
         ),
       ),
-      body: _orders.isEmpty
-          ? const Center(child: CircularProgressIndicator())
-          : ListView.builder(
+      body: ListView.builder(
         padding: const EdgeInsets.all(16),
-        itemCount: _orders.length,
+        itemCount: orders.length,
         itemBuilder: (context, index) {
-          final order = _orders[index];
+          final order = orders[index];
           return ExpansionTile(
             tilePadding: const EdgeInsets.symmetric(vertical: 4.0, horizontal: 8.0),
             title: Row(
@@ -67,17 +79,24 @@ class _OrdersPageState extends State<OrdersPage> {
                 Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text("Order ID: ${order['orderId']}", style: const TextStyle(fontWeight: FontWeight.bold)),
-                    Text("Date: ${order['date']}"),
+                    Text(
+                      "Order ID: ${order['orderId']}",
+                      style: const TextStyle(fontWeight: FontWeight.bold),
+                    ),
+                    Text("Date: ${order['date']}")
                   ],
                 ),
                 Text(
                   currencyFormat.format(order['totalAmount']),
-                  style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14, color: Colors.black87),
+                  style: const TextStyle(
+                    fontWeight: FontWeight.bold,
+                    fontSize: 14,
+                    color: Colors.black87,
+                  ),
                 ),
               ],
             ),
-            children: List<Widget>.from(order['items'].map<Widget>((item) {
+            children: order['items'].map<Widget>((item) {
               return Column(
                 children: [
                   Padding(
@@ -87,12 +106,13 @@ class _OrdersPageState extends State<OrdersPage> {
                   const Divider(),
                 ],
               );
-            })),
+            }).toList(),
           );
         },
       ),
     );
   }
+
   Widget _buildOrderItem(BuildContext context, Map<String, dynamic> item) {
     Color statusColor;
     switch (item['status']) {

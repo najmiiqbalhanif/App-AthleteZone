@@ -1,41 +1,14 @@
 import 'package:flutter/material.dart';
-import 'package:helloworld/presentation/pages/ordersPage.dart';
+// import 'package:helloworld/presentation/pages/ordersPage.dart'; // Tidak perlu import OrdersPage secara langsung lagi di sini
 import 'package:helloworld/presentation/pages/profilepage.dart';
 import '../../models/Payment.dart';
 import '../../services/CheckoutService.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../../models/CartItem.dart'; // Import CartItem
 import '../../models/user.dart';
+import '../mainLayout.dart'; // Import MainLayout
 
 String fullName = '';
-
-
-
-// void main() {
-//   runApp(MaterialApp(
-//     home: CheckoutPage(),
-//     debugShowCheckedModeBanner: false,
-//     theme: ThemeData(
-//       primarySwatch: Colors.blue,
-//       colorScheme: ColorScheme.light(
-//         primary: Colors.blue,
-//         onPrimary: Colors.white,
-//         secondary: Colors.blue,
-//       ),
-//       elevatedButtonTheme: ElevatedButtonThemeData(
-//         style: ElevatedButton.styleFrom(
-//           backgroundColor: Colors.blue[900],
-//         ),
-//       ),
-//       outlinedButtonTheme: OutlinedButtonThemeData(
-//         style: OutlinedButton.styleFrom(
-//           side: BorderSide(color: Colors.blue[900]!),
-//           foregroundColor: Colors.blue[900],
-//         ),
-//       ),
-//     ),
-//   ));
-// }
 
 class CheckoutPage extends StatefulWidget {
   final List<CartItem> cartItems;
@@ -408,11 +381,20 @@ class _CheckoutPageState extends State<CheckoutPage> {
                             actions: [
                               TextButton(
                                 onPressed: () {
-                                  Navigator.pop(context);
+                                  Navigator.pop(context); // Tutup AlertDialog
+
+                                  // Ganti baris ini:
+                                  // Navigator.pushAndRemoveUntil(
+                                  //   context,
+                                  //   MaterialPageRoute(builder: (context) => OrdersPage()),
+                                  //       (route) => false,
+                                  // );
+
+                                  // Dengan ini: Kembali ke MainLayout dan set indeks ke tab Orders (indeks 2)
                                   Navigator.pushAndRemoveUntil(
                                     context,
-                                    MaterialPageRoute(builder: (context) => OrdersPage()),
-                                        (route) => false,
+                                    MaterialPageRoute(builder: (context) => const MainLayout(initialIndex: 2)),
+                                        (Route<dynamic> route) => false, // Ini akan menghapus semua rute di bawah MainLayout
                                   );
                                 },
                                 child: Text("OK"),

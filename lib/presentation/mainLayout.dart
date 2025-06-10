@@ -7,14 +7,18 @@ import 'pages/cartpage.dart';
 import 'pages/profilepage.dart';
 
 class MainLayout extends StatefulWidget {
-  const MainLayout({super.key});
+  // Tambahkan parameter initialIndex
+  final int initialIndex;
+
+  const MainLayout({super.key, this.initialIndex = 0}); // Default ke Home (indeks 0)
 
   @override
   State<MainLayout> createState() => _MainLayoutState();
 }
 
 class _MainLayoutState extends State<MainLayout> {
-  int _selectedIndex = 0;
+  // Gunakan 'late' karena akan diinisialisasi di initState
+  late int _selectedIndex;
 
   // Daftar halaman untuk BottomNavigationBar
   final List<Widget> _pages = [
@@ -24,6 +28,25 @@ class _MainLayoutState extends State<MainLayout> {
     const CartPage(),
     const ProfilePage(),
   ];
+
+  @override
+  void initState() {
+    super.initState();
+    _selectedIndex = widget.initialIndex; // Inisialisasi dari parameter
+  }
+
+  // Jika Anda ingin dapat mengubah tab dari luar (misalnya, setelah notifikasi),
+  // Anda bisa menambahkan didUpdateWidget, tetapi untuk kasus ini, initState cukup.
+  @override
+  void didUpdateWidget(covariant MainLayout oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (widget.initialIndex != oldWidget.initialIndex) {
+      setState(() {
+        _selectedIndex = widget.initialIndex;
+      });
+    }
+  }
+
 
   @override
   Widget build(BuildContext context) {

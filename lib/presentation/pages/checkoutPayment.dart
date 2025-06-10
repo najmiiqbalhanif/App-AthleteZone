@@ -68,7 +68,7 @@ class _CheckoutPageState extends State<CheckoutPage> {
 
   List<String> pickupLocations = ['Bandung Store', 'Jakarta Store'];
   List<String> pickupTimes = ['10:00 AM', '1:00 PM', '4:00 PM'];
-  final checkoutService = CheckoutService(baseUrl: 'http://your-backend-url'); // **IMPORTANT:** Update your base URL
+  final checkoutService = CheckoutService(baseUrl: 'http://10.0.2.2:8080'); // **IMPORTANT:** Update your base URL
 
   @override
   void initState() {
@@ -384,19 +384,21 @@ class _CheckoutPageState extends State<CheckoutPage> {
                         final payment = PaymentDTO(
                           userId: userId,
                           paymentMethod: _selectedPaymentMethod ?? 'credit',
-                          address: isDelivery ? _addressController.text : (selectedLocation ?? 'N/A'), // Use address from controller or pickup location
-                          totalAmount: widget.totalPrice, // Use total price from CartPage
+                          address: isDelivery ? _addressController.text : (selectedLocation ?? 'N/A'),
+                          totalAmount: widget.totalPrice,
                         );
 
-                        // Map CartItem to PaymentItemDTO
                         final items = widget.cartItems.map((cartItem) => PaymentItemDTO(
+                          userId: userId,
                           name: cartItem.product.name,
                           quantity: cartItem.quantity,
-                          price: cartItem.product.price, // Assuming product has price
-                          subTotal: cartItem.totalPrice, // Total price for this specific cart item
+                          price: cartItem.product.price,
+                          subTotal: cartItem.totalPrice,
                         )).toList();
 
+                        print("Submitting checkout...");
                         await checkoutService.submitCheckout(payment, items);
+                        print("Checkout submitted!");
 
                         showDialog(
                           context: context,
@@ -406,12 +408,11 @@ class _CheckoutPageState extends State<CheckoutPage> {
                             actions: [
                               TextButton(
                                 onPressed: () {
-                                  Navigator.pop(context); // Close dialog
-                                  // Navigate back to CartPage and clear it or navigate to OrdersPage
-                                  Navigator.pushAndRemoveUntil( // Clear cart and go to orders
+                                  Navigator.pop(context);
+                                  Navigator.pushAndRemoveUntil(
                                     context,
                                     MaterialPageRoute(builder: (context) => OrdersPage()),
-                                        (route) => false, // Remove all previous routes
+                                        (route) => false,
                                   );
                                 },
                                 child: Text("OK"),
@@ -420,11 +421,12 @@ class _CheckoutPageState extends State<CheckoutPage> {
                           ),
                         );
                       } catch (e) {
-                        print('Checkout submission failed: $e'); // Log error for debugging
+                        print('Checkout submission failed: $e');
                         ScaffoldMessenger.of(context).showSnackBar(
                           SnackBar(content: Text('Failed to submit order: $e')),
                         );
                       }
+
                     },
                     style: ElevatedButton.styleFrom(
                       backgroundColor: const Color(0xFF041761),

@@ -74,7 +74,7 @@ class _FavoriteProductsPageState extends State<FavoriteProductsPage> {
     if (_isLoading || _currentUserId == null) {
       return Scaffold(
         appBar: AppBar(
-          title: const Text('My Favorites'),
+          title: const Text('Favorites'),
           centerTitle: true,
           backgroundColor: Colors.white,
           elevation: 0,
@@ -102,7 +102,7 @@ class _FavoriteProductsPageState extends State<FavoriteProductsPage> {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('My Favorites'),
+        title: const Text('Favorites'),
         centerTitle: true,
         backgroundColor: Colors.white,
         elevation: 0,

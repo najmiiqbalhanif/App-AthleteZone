@@ -6,6 +6,8 @@ import 'productPageDetail.dart';
 import '../../models/Product.dart';
 import '../../services/ProductService.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:provider/provider.dart'; // Tambahkan ini
+import 'package:helloworld/presentation/pages/cart_provider.dart'; // Tambahkan ini (sesuaikan path jika berbeda)
 
 // Fungsi async untuk dapatkan userId dari SharedPreferences
 Future<int?> getUserId() async {
@@ -140,7 +142,17 @@ class _ProductPageState extends State<ProductPage> {
       final response = await http.post(url);
 
       if (response.statusCode == 200) {
-        _showAddedToBagOverlay(1); // Pass the total items, replace '2' with actual count
+        // --- BARU: Perbarui CartProvider setelah sukses di backend ---
+        // Dapatkan instance CartProvider. listen: false karena kita hanya memanggil metode.
+        final cartProvider = Provider.of<CartProvider>(context, listen: false);
+
+        // Panggil metode di CartProvider untuk menambahkan/memperbarui item secara lokal
+        // Asumsi product adalah product! yang sedang ditampilkan di halaman ini
+        // Asumsi kuantitas yang ditambahkan adalah 1 (sesuaikan jika ada pilihan kuantitas di ProductPage)
+        cartProvider.addExistingItem(product!, 1); // Menggunakan product! dan kuantitas 1
+
+        _showAddedToBagOverlay(cartProvider.items.length); // Tampilkan total item dari provider
+
       } else {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text("Failed to add product")),
@@ -188,7 +200,7 @@ class _ProductPageState extends State<ProductPage> {
                       ),
                       const SizedBox(height: 16),
                       Text(
-                        "Added to Bag",
+                        "Added to Cart",
                         style: Theme.of(context).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold),
                       ),
                       const SizedBox(height: 4),
@@ -201,7 +213,7 @@ class _ProductPageState extends State<ProductPage> {
                 ),
                 const SizedBox(height: 24), // Space between the main dialog and the "Adding to Bag" text
                 Text(
-                  "Adding to Bag",
+                  "Adding to Cart",
                   style: Theme.of(context).textTheme.titleMedium?.copyWith(color: Colors.white), // Text color for the "Adding to Bag"
                 ),
               ],
@@ -463,7 +475,7 @@ class _ProductPageState extends State<ProductPage> {
                         foregroundColor: Colors.white,
                         padding: const EdgeInsets.symmetric(vertical: 16),
                       ),
-                      child: const Text("Add to Bag"),
+                      child: const Text("Add to Cart"),
                     ),
                   ),
                   const SizedBox(width: 8),

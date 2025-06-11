@@ -185,7 +185,7 @@ class _CartPageState extends State<CartPage> {
 
     final FixedExtentScrollController scrollController =
     FixedExtentScrollController(initialItem: currentQuantity - 1);
-    int selectedQuantity = currentQuantity;
+    int selectedQuantity = currentQuantity; // Inisialisasi selectedQuantity
 
     return await showModalBottomSheet<int>(
       context: context,
@@ -193,98 +193,108 @@ class _CartPageState extends State<CartPage> {
         borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
       ),
       builder: (BuildContext context) {
-        return Container(
-          height: MediaQuery.of(context).size.height * 0.45,
-          padding: const EdgeInsets.all(16.0),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Container(
-                width: 40,
-                height: 5,
-                decoration: BoxDecoration(
-                  color: Colors.grey[300],
-                  borderRadius: BorderRadius.circular(2.5),
-                ),
-              ),
-              const SizedBox(height: 16),
-              ListTile(
-                title: Text(
-                  "Remove",
-                  style: TextStyle(color: Colors.red[700], fontSize: 18),
-                  textAlign: TextAlign.center,
-                ),
-                onTap: () {
-                  Navigator.pop(context, 0);
-                },
-              ),
-              const Divider(),
-              Expanded(
-                child: Stack(
-                  alignment: Alignment.center,
-                  children: [
-                    // Garis indikator abu-abu terang di tengah, membingkai angka
-                    Positioned.fill(
-                      child: Align(
-                        alignment: Alignment.center,
-                        child: Container(
-                          height: itemHeight, // Tinggi garis sama dengan tinggi item
-                          // Lebar container ini akan menyesuaikan dengan lebar Stack
-                          decoration: BoxDecoration(
-                            color: Colors.grey[200], // Warna abu-abu terang
-                            borderRadius: BorderRadius.circular(8), // Sudut melengkung
-                          ),
-                        ),
-                      ),
+        // Menggunakan StatefulBuilder untuk mengelola state lokal dari ListWheelScrollView
+        return StatefulBuilder(
+          builder: (BuildContext context, StateSetter setStateInner) {
+            return Container(
+              height: MediaQuery.of(context).size.height * 0.45,
+              padding: const EdgeInsets.all(16.0),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Container(
+                    width: 40,
+                    height: 5,
+                    decoration: BoxDecoration(
+                      color: Colors.grey[300],
+                      borderRadius: BorderRadius.circular(2.5),
                     ),
-                    ListWheelScrollView.useDelegate(
-                      controller: scrollController,
-                      itemExtent: itemHeight, // Tinggi setiap item dalam list
-                      perspective: 0.003,
-                      diameterRatio: 1.5,
-                      physics: const FixedExtentScrollPhysics(),
-                      onSelectedItemChanged: (index) {
-                        selectedQuantity = index + 1;
-                      },
-                      childDelegate: ListWheelChildBuilderDelegate(
-                        builder: (BuildContext context, int index) {
-                          final int qty = index + 1;
-                          return Center(
-                            child: Text(
-                              '$qty',
-                              style: TextStyle(
-                                fontSize: 24,
-                                fontWeight: (index + 1) == currentQuantity ? FontWeight.bold : FontWeight.normal,
-                                color: (index + 1) == currentQuantity ? Colors.blue[900] : Colors.black,
+                  ),
+                  const SizedBox(height: 16),
+                  ListTile(
+                    title: Text(
+                      "Remove",
+                      style: TextStyle(color: Colors.red[700], fontSize: 18),
+                      textAlign: TextAlign.center,
+                    ),
+                    onTap: () {
+                      Navigator.pop(context, 0);
+                    },
+                  ),
+                  const Divider(),
+                  Expanded(
+                    child: Stack(
+                      alignment: Alignment.center,
+                      children: [
+                        // Garis indikator abu-abu terang di tengah, membingkai angka
+                        Positioned.fill(
+                          child: Align(
+                            alignment: Alignment.center,
+                            child: Container(
+                              height: itemHeight, // Tinggi garis sama dengan tinggi item
+                              decoration: BoxDecoration(
+                                color: Colors.grey[200], // Warna abu-abu terang
+                                borderRadius: BorderRadius.circular(8), // Sudut melengkung
                               ),
                             ),
-                          );
-                        },
-                        childCount: 10,
+                          ),
+                        ),
+                        ListWheelScrollView.useDelegate(
+                          controller: scrollController,
+                          itemExtent: itemHeight, // Tinggi setiap item dalam list
+                          perspective: 0.003,
+                          diameterRatio: 1.5,
+                          physics: const FixedExtentScrollPhysics(),
+                          onSelectedItemChanged: (index) {
+                            // Perbarui selectedQuantity dan rebuild StatefulBuilder
+                            setStateInner(() {
+                              selectedQuantity = index + 1;
+                            });
+                          },
+                          childDelegate: ListWheelChildBuilderDelegate(
+                            builder: (BuildContext context, int index) {
+                              final int qty = index + 1;
+                              // Tentukan apakah item ini adalah yang sedang dipilih (berada di tengah)
+                              final bool isSelected = (qty == selectedQuantity);
+
+                              return Center(
+                                child: Text(
+                                  '$qty',
+                                  style: TextStyle(
+                                    fontSize: 24,
+                                    fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+                                    color: isSelected ? Colors.blueAccent : Colors.grey[700], // Perubahan warna di sini
+                                  ),
+                                ),
+                              );
+                            },
+                            childCount: 10,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                  SizedBox(
+                    width: double.infinity,
+                    child: ElevatedButton(
+                      onPressed: () {
+                        Navigator.pop(context, selectedQuantity);
+                      },
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: const Color(0xFF041761),
+                        padding: const EdgeInsets.symmetric(vertical: 12),
+                      ),
+                      child: const Text(
+                        'Done',
+                        style: TextStyle(color: Colors.white, fontSize: 16),
                       ),
                     ),
-                  ],
-                ),
-              ),
-              const SizedBox(height: 16),
-              SizedBox(
-                width: double.infinity,
-                child: ElevatedButton(
-                  onPressed: () {
-                    Navigator.pop(context, selectedQuantity);
-                  },
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color(0xFF041761),
-                    padding: const EdgeInsets.symmetric(vertical: 12),
                   ),
-                  child: const Text(
-                    'Done',
-                    style: TextStyle(color: Colors.white, fontSize: 16),
-                  ),
-                ),
+                ],
               ),
-            ],
-          ),
+            );
+          },
         );
       },
     );

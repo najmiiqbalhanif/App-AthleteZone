@@ -16,7 +16,7 @@ class PaymentItemDTO {
 
   Map<String, dynamic> toJson() => {
     'userId': userId,
-    'name': name,
+    'productName': name,
     'quantity': quantity,
     'price': price,
     'subTotal': subTotal,

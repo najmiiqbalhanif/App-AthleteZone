@@ -224,7 +224,7 @@ class _ProductPageState extends State<ProductPage> {
             borderRadius: BorderRadius.circular(16.0),
           ),
           title: const Text(
-            "Quantity Full!",
+            "Quantity Full",
             textAlign: TextAlign.center,
             style: TextStyle(fontWeight: FontWeight.bold),
           ),
@@ -238,17 +238,28 @@ class _ProductPageState extends State<ProductPage> {
               ),
               const SizedBox(height: 16),
               Text(
-                "You've reached the maximum quantity (${MAX_QUANTITY_PER_ITEM}) for this item in your cart.",
+                "You've reached the maximum quantity for this item in your cart.",
                 textAlign: TextAlign.center,
               ),
             ],
           ),
           actions: [
-            TextButton(
-              onPressed: () {
-                Navigator.of(context).pop();
-              },
-              child: const Text("OK"),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                TextButton(
+                  onPressed: () {
+                    Navigator.of(context).pop(); // Tutup dialog
+                  },
+                  child: const Text(
+                    "OK",
+                    style: TextStyle(
+                      fontSize: 18, // <-- PERBESAR UKURAN FONT DI SINI
+                      fontWeight: FontWeight.bold, // Opsional: bisa ditambahkan agar lebih menonjol
+                    ),
+                  ),
+                ),
+              ],
             ),
           ],
         );

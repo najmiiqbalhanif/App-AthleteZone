@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
-import '../../services/CartService.dart';
-import '../../models/CartItem.dart';
+import 'package:provider/provider.dart';
+import 'package:helloworld/presentation/pages/cart_provider.dart'; // Pastikan path ini benar
+import '../../services/cartService.dart'; // Untuk interaksi API backend
+import '../../models/CartItem.dart'; // Model CartItem Anda
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:helloworld/presentation/pages/checkoutPayment.dart';
-
-
+import 'package:helloworld/presentation/pages/checkoutPayment.dart'; // Pastikan path ini benar
 
 class CartPage extends StatefulWidget {
   const CartPage({super.key});
@@ -15,45 +15,80 @@ class CartPage extends StatefulWidget {
 
 class _CartPageState extends State<CartPage> {
   final CartService _cartService = CartService();
-  late Future<int?> _futureUserId;
+  Future<int?>? _initializationFuture;
 
   @override
   void initState() {
     super.initState();
-    _futureUserId = getUserId();
+    _initializationFuture = _initializeCartData();
   }
 
-  Future<int?> getUserId() async {
+  Future<int?> _initializeCartData() async {
     final prefs = await SharedPreferences.getInstance();
-    return prefs.getInt('userId');
+    final userId = prefs.getInt('userId');
+
+    if (userId == null) {
+      return null;
+    }
+
+    try {
+      final initialCartItems = await _cartService.getCartItems(userId);
+      if (!mounted) {
+        return userId;
+      }
+
+      final cartProvider = Provider.of<CartProvider>(context, listen: false);
+      cartProvider.clearCart();
+
+      if (initialCartItems.isNotEmpty) {
+        for (var item in initialCartItems) {
+          cartProvider.addExistingItem(item.product, item.quantity);
+        }
+      }
+      return userId;
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Failed to load cart data: ${e.toString()}')),
+        );
+      }
+      return userId;
+    }
   }
 
   @override
   Widget build(BuildContext context) {
     return FutureBuilder<int?>(
-      future: _futureUserId,
-      builder: (context, userSnapshot) {
-        if (userSnapshot.connectionState == ConnectionState.waiting) {
-          return const Center(child: CircularProgressIndicator());
-        } else if (!userSnapshot.hasData || userSnapshot.data == null) {
-          return const Center(child: Text("User not found"));
+      future: _initializationFuture,
+      builder: (context, snapshot) {
+        if (snapshot.connectionState == ConnectionState.waiting) {
+          return const Scaffold(body: Center(child: CircularProgressIndicator()));
+        } else if (snapshot.hasError) {
+          return Scaffold(body: Center(child: Text("Error loading data: ${snapshot.error}")));
+        } else if (!snapshot.hasData || snapshot.data == null) {
+          return const Scaffold(body: Center(child: Text("Silakan login untuk melihat keranjang Anda.")));
         }
 
-        final userId = userSnapshot.data!;
+        final userId = snapshot.data!;
 
-        return FutureBuilder<List<CartItem>>(
-          future: _cartService.getCartItems(userId),
-          builder: (context, snapshot) {
-            if (snapshot.connectionState == ConnectionState.waiting) {
-              return const Center(child: CircularProgressIndicator());
-            } else if (snapshot.hasError) {
-              return Center(child: Text("Error: ${snapshot.error}"));
-            } else if (!snapshot.hasData || snapshot.data!.isEmpty) {
-              return const Center(child: Text("Your cart is empty."));
+        return Consumer<CartProvider>(
+          builder: (context, cartProvider, child) {
+            List<CartItem> cartItems = cartProvider.items;
+            double totalPrice = cartProvider.totalPrice;
+
+            if (cartItems.isEmpty) {
+              return Scaffold(
+                backgroundColor: Colors.white,
+                appBar: AppBar(
+                  backgroundColor: Colors.white,
+                  title: const Text(
+                    'Cart',
+                    style: TextStyle(fontWeight: FontWeight.bold),
+                  ),
+                ),
+                body: const Center(child: Text("Keranjang Anda kosong.")),
+              );
             } else {
-              List<CartItem> cartItems = snapshot.data!;
-              double totalPrice = _cartService.getTotalPrice();
-
               return Scaffold(
                 backgroundColor: Colors.white,
                 appBar: AppBar(
@@ -70,7 +105,19 @@ class _CartPageState extends State<CartPage> {
                         padding: const EdgeInsets.all(16),
                         itemCount: cartItems.length,
                         itemBuilder: (context, index) {
-                          return _buildCartItem(context, cartItems[index]);
+                          return Column(
+                            children: [
+                              _buildCartItem(context, cartItems[index], userId),
+                              if (index < cartItems.length - 1)
+                                Divider(
+                                  height: 32,
+                                  thickness: 1,
+                                  color: Colors.grey[300],
+                                  indent: 16,
+                                  endIndent: 16,
+                                ),
+                            ],
+                          );
                         },
                       ),
                     ),
@@ -82,14 +129,14 @@ class _CartPageState extends State<CartPage> {
                       ),
                       child: Column(
                         children: [
+                          // Pemanggilan _buildTotalRow yang benar
                           _buildTotalRow('Subtotal', 'Rp ${totalPrice.toStringAsFixed(0).replaceAllMapped(
                             RegExp(r'(\d{1,3})(?=(\d{3})+(?!\d))'),
-                              (match) => '${match[1]}.',)}'),
+                                (match) => '${match[1]}.',)}'),
                           _buildTotalRow('Shipping', 'Standard - Free'),
                           _buildTotalRow('Estimated Total', 'Rp ${totalPrice.toStringAsFixed(0).replaceAllMapped(
                             RegExp(r'(\d{1,3})(?=(\d{3})+(?!\d))'),
-                              (match) => '${match[1]}.',)} + Tax', isBold: true),
-
+                                (match) => '${match[1]}.',)} + Tax', isBold: true), // Argumen isBold: true
                           const SizedBox(height: 16),
                           SizedBox(
                             width: double.infinity,
@@ -99,14 +146,13 @@ class _CartPageState extends State<CartPage> {
                                 padding: const EdgeInsets.symmetric(vertical: 16),
                               ),
                               onPressed: () {
-                                // Ensure 'context' is available here (it usually is within a Widget's build method or State class)
                                 Navigator.push(
                                   context,
                                   MaterialPageRoute(
                                     builder: (context) => CheckoutPage(
-                                      cartItems: cartItems, // Pass cart items
+                                      cartItems: cartItems,
                                       totalPrice: totalPrice,
-                                    ), // Correctly instantiating your widget
+                                    ),
                                   ),
                                 );
                               },
@@ -133,86 +179,129 @@ class _CartPageState extends State<CartPage> {
     );
   }
 
+  // --- Pastikan _buildCartItem berada di dalam kelas _CartPageState ---
+  Widget _buildCartItem(BuildContext context, CartItem cartItem, int userId) {
+    final cartProvider = Provider.of<CartProvider>(context, listen: false);
 
-  // Widget untuk membangun tampilan setiap item dalam keranjang
-  Widget _buildCartItem(BuildContext context, CartItem cartItem) {
+    List<DropdownMenuItem<int>> quantityOptions = [
+      DropdownMenuItem<int>(
+        value: 0,
+        child: Text("Remove", style: TextStyle(color: Colors.red[700])),
+      ),
+      for (int i = 1; i <= 100; i++)
+        DropdownMenuItem<int>(
+          value: i,
+          child: Text("$i"),
+        ),
+    ];
+
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 8.0),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // --- Bagian Gambar dan Teks Tambahan ---
           Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // Container untuk gambar produk
               Container(
                 width: 100,
                 height: 100,
                 decoration: BoxDecoration(
                   borderRadius: BorderRadius.circular(8),
                   image: DecorationImage(
-                    image: NetworkImage(cartItem.product.photoUrl),  // Menggunakan photoUrl dari Product
+                    image: NetworkImage(cartItem.product.photoUrl),
                     fit: BoxFit.cover,
                   ),
                 ),
               ),
-              const SizedBox(height: 4),
-              Text(
-                "Qty: ${cartItem.quantity}",  // Menampilkan jumlah
-                style: TextStyle(
-                    color: Colors.black,
-                    fontSize: 16,
-                    fontWeight: FontWeight.bold
+              const SizedBox(height: 8),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                decoration: BoxDecoration(
+                  border: Border.all(color: Colors.grey.shade400),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: DropdownButtonHideUnderline(
+                  child: DropdownButton<int>(
+                    value: cartItem.quantity,
+                    icon: const Icon(Icons.keyboard_arrow_down),
+                    elevation: 16,
+                    style: const TextStyle(color: Colors.black, fontSize: 16),
+                    onChanged: (int? newValue) async {
+                      if (newValue != null) {
+                        if (newValue == 0) {
+                          try {
+                            await _cartService.removeProductFromCart(userId, cartItem.product.id!);
+                            cartProvider.removeItem(cartItem.product);
+                          } catch (e) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(content: Text('Failed to remove item: ${e.toString()}')),
+                            );
+                          }
+                        } else {
+                          try {
+                            await _cartService.updateProductQuantity(userId, cartItem.product.id!, newValue);
+                            cartProvider.updateQuantity(cartItem.product, newValue);
+                          } catch (e) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(content: Text('Failed to update quantity: ${e.toString()}')),
+                            );
+                          }
+                        }
+                      }
+                    },
+                    items: quantityOptions,
+                  ),
                 ),
               ),
             ],
           ),
           const SizedBox(width: 16),
-
-          // Product Details
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  cartItem.product.name,  // Nama produk
+                  cartItem.product.name,
                   style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                      fontWeight: FontWeight.bold
+                    fontWeight: FontWeight.bold,
                   ),
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
                 ),
                 const SizedBox(height: 4),
                 Text(
-                  cartItem.product.category,  // Kategori produk
+                  cartItem.product.category,
                   style: TextStyle(
                     color: Colors.grey[600],
                     fontSize: 14,
                   ),
                 ),
                 const SizedBox(height: 8),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.end, // Pindahkan harga ke paling kanan
+                  crossAxisAlignment: CrossAxisAlignment.end,
+                  children: [
+                    // Remove button dihapus karena sudah di dropdown
+                    // Tambahkan Spacer jika perlu lebih banyak kontrol spasi
+                    // Spacer(), // Jika Anda ingin memisahkan harga lebih jauh dari nama produk
+                    Text(
+                      "Rp ${cartItem.totalPrice.toStringAsFixed(0).replaceAllMapped(RegExp(r'(\d{1,3})(?=(\d{3})+(?!\d))'),(match) => '${match[1]}.',)}",
+                      style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ],
+                ),
               ],
             ),
           ),
-
-          // Price and Quantity Control
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.end,
-            children: [
-              Text(
-                "Rp ${cartItem.totalPrice.toStringAsFixed(0).replaceAllMapped(RegExp(r'(\d{1,3})(?=(\d{3})+(?!\d))'),(match) => '${match[1]}.',)}",  // Total harga untuk item ini
-
-                style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                    fontWeight: FontWeight.bold
-                ),
-              ),
-            ],
-          )
         ],
       ),
     );
   }
 
-  // Widget untuk menampilkan baris total (Subtotal, Shipping, Estimated Total)
+  // --- Pastikan _buildTotalRow berada di dalam kelas _CartPageState ---
   Widget _buildTotalRow(String label, String value, {bool isBold = false}) {
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 4),

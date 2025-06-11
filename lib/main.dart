@@ -1,9 +1,16 @@
 import 'package:flutter/material.dart';
-import 'presentation/pages/login.dart'; // arahkan ke LoginPage, bukan MainLayout
+import 'package:provider/provider.dart'; // Import package provider
+import 'package:helloworld/presentation/pages/login.dart'; // Arahkan ke LoginPage
+import 'package:helloworld/presentation/pages/cart_provider.dart'; // Sesuaikan path ini
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  runApp(const MyApp());
+  runApp(
+    ChangeNotifierProvider(
+      create: (context) => CartProvider(),
+      child: const MyApp(),
+    ),
+  );
 }
 
 class MyApp extends StatelessWidget {
@@ -12,8 +19,8 @@ class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      debugShowCheckedModeBanner: false, // opsional: untuk menghilangkan banner DEBUG
-      home: const LoginPage(), // ✅ Ganti MainLayout dengan LoginPage
+      debugShowCheckedModeBanner: false,
+      home: const LoginPage(),
       title: 'AthleteZone',
       theme: ThemeData(
         bottomNavigationBarTheme: BottomNavigationBarThemeData(

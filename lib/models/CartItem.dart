@@ -1,7 +1,7 @@
-import '../models/Product.dart';
+import '../models/Product.dart'; // Pastikan path ini benar
 
 class CartItem {
-  Product product;  // Product terkait dengan CartItem
+  Product product;  // Produk terkait dengan CartItem
   int quantity;
 
   CartItem({required this.product, this.quantity = 1});
@@ -9,35 +9,37 @@ class CartItem {
   // Menghitung total harga untuk CartItem (harga produk * kuantitas)
   double get totalPrice => product.price * quantity;
 
-  // Pemetaan JSON ke CartItem
-  factory CartItem.fromJson(Map<String, dynamic> json) {
-    // Jika data 'product' ada di dalam JSON (response dengan nested 'product')
-    if (json.containsKey('product')) {
-      return CartItem(
-        product: Product.fromJson(json['product']), // Ambil 'product' dari nested JSON
-        quantity: json['quantity'],
-      );
-    } else {
-      // Jika response tidak ada nested 'product', buat 'product' secara manual
-      return CartItem(
-        product: Product(
-          id: json['id'],
-          name: json['name'],
-          photoUrl: json['photoUrl'],
-          price: json['price']?.toDouble() ?? 0.0,
-          category: json['category'],
-          brand: json['brand'],
-          stock: 0, // Default karena tidak ada di response
-          createdOn: null,
-          updatedOn: null,
-        ),
-        quantity: json['quantity'],
-      );
+  // Metode untuk menambah kuantitas
+  void incrementQuantity() {
+    quantity++;
+  }
+
+  // Metode untuk mengurangi kuantitas
+  void decrementQuantity() {
+    if (quantity > 1) { // Pastikan kuantitas tidak kurang dari 1
+      quantity--;
     }
   }
 
-  // Method untuk memperbarui kuantitas produk
+  // Pemetaan JSON ke CartItem
+  // Saya merevisi factory constructor ini agar lebih fleksibel
+  // dan mengasumsikan bahwa 'product' akan selalu ada dalam format yang bisa di-deserialize
+  factory CartItem.fromJson(Map<String, dynamic> json) {
+    // Asumsi: JSON akan selalu memiliki struktur yang berisi product data
+    // jika Anda menerima CartItem dari API backend (misalnya dari /api/cart/items)
+    // Jika API Anda mengembalikan struktur datar tanpa nested 'product',
+    // Anda perlu menyesuaikan deserialisasi di CartService, bukan di sini.
+    return CartItem(
+      // Asumsi 'product' adalah objek JSON yang perlu diuraikan oleh Product.fromJson
+      product: Product.fromJson(json['product']),
+      quantity: json['quantity'] as int, // Casting eksplisit ke int
+    );
+  }
+
+  // Metode untuk memperbarui kuantitas produk (tetap dipertahankan jika diperlukan)
   void updateQuantity(int newQuantity) {
-    quantity = newQuantity;
+    if (newQuantity >= 0) { // Pastikan kuantitas tidak negatif
+      quantity = newQuantity;
+    }
   }
 }

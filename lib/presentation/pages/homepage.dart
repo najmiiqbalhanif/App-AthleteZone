@@ -90,7 +90,7 @@ class _HomePageState extends State<HomePage> {
                         imageUrl: product.photoUrl,
                         title: product.name,
                         category: product.category,
-                        price: 'Rp ${product.price.toStringAsFixed(0)}',
+                        price: 'Rp ${product.price.toStringAsFixed(0).replaceAllMapped(RegExp(r'(\d{1,3})(?=(\d{3})+(?!\d))'), (match) => '${match[1]}.',)}',
                         onTap: () {
                           Navigator.push(
                             context,

@@ -260,7 +260,7 @@ class _CartPageState extends State<CartPage> {
                             ),
                           );
                         },
-                        childCount: 100,
+                        childCount: 10,
                       ),
                     ),
                   ],
@@ -295,119 +295,117 @@ class _CartPageState extends State<CartPage> {
 
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 8.0),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Container(
-                width: 100,
-                height: 100,
-                decoration: BoxDecoration(
-                  borderRadius: BorderRadius.circular(8),
-                  image: DecorationImage(
-                    image: NetworkImage(cartItem.product.photoUrl),
-                    fit: BoxFit.cover,
-                  ),
-                ),
-              ),
-              const SizedBox(height: 8),
-              GestureDetector(
-                onTap: () async {
-                  final int? selectedQuantity = await _showQuantityPicker(context, cartItem.quantity);
-
-                  if (selectedQuantity != null) {
-                    if (selectedQuantity == 0) {
-                      try {
-                        await _cartService.removeProductFromCart(userId, cartItem.product.id!);
-                        cartProvider.removeItem(cartItem.product);
-                        if (mounted) {
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            SnackBar(content: Text('${cartItem.product.name} removed from cart')),
-                          );
-                        }
-                      } catch (e) {
-                        if (mounted) {
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            SnackBar(content: Text('Failed to remove item: ${e.toString()}')),
-                          );
-                        }
-                      }
-                    } else if (selectedQuantity != cartItem.quantity) {
-                      try {
-                        await _cartService.updateProductQuantity(userId, cartItem.product.id!, selectedQuantity);
-                        cartProvider.updateQuantity(cartItem.product, selectedQuantity);
-                        if (mounted) {
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            SnackBar(content: Text('Quanitity ${cartItem.product.name} updated to $selectedQuantity')),
-                          );
-                        }
-                      } catch (e) {
-                        if (mounted) {
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            SnackBar(content: Text('Failed to update quantity: ${e.toString()}')),
-                          );
-                        }
-                      }
-                    }
-                  }
-                },
-                child: Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 0, vertical: 0),
-                  child: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Text(
-                        'Qty ${cartItem.quantity}',
-                        style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w500),
-                      ),
-                      const SizedBox(width: 4),
-                      const Icon(Icons.keyboard_arrow_down, size: 20),
-                    ],
-                  ),
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(width: 16),
-          Expanded(
-            child: Column(
+      child: IntrinsicHeight( // Tambahkan IntrinsicHeight agar Column anak bisa mengisi tinggi penuh
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.stretch, // Agar anak Column memenuhi tinggi Row
+          children: [
+            // Kolom Kiri: Gambar dan Qty Selector
+            Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(
-                  cartItem.product.name,
-                  style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                    fontWeight: FontWeight.bold,
-                  ),
-                  maxLines: 2,
-                  overflow: TextOverflow.ellipsis,
-                ),
-                const SizedBox(height: 4),
-                Text(
-                  cartItem.product.category,
-                  style: TextStyle(
-                    color: Colors.grey[600],
-                    fontSize: 14,
+                Container(
+                  width: 100,
+                  height: 100,
+                  decoration: BoxDecoration(
+                    borderRadius: BorderRadius.circular(8),
+                    image: DecorationImage(
+                      image: NetworkImage(cartItem.product.photoUrl),
+                      fit: BoxFit.cover,
+                    ),
                   ),
                 ),
                 const SizedBox(height: 8),
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.end,
-                  crossAxisAlignment: CrossAxisAlignment.end,
-                  children: [
-                    Text(
+                GestureDetector(
+                  onTap: () async {
+                    final int? selectedQuantity = await _showQuantityPicker(context, cartItem.quantity);
+
+                    if (selectedQuantity != null) {
+                      if (selectedQuantity == 0) {
+                        try {
+                          await _cartService.removeProductFromCart(userId, cartItem.product.id!);
+                          cartProvider.removeItem(cartItem.product);
+                        } catch (e) {
+                          if (mounted) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(content: Text('Failed to remove item: ${e.toString()}')),
+                            );
+                          }
+                        }
+                      } else if (selectedQuantity != cartItem.quantity) {
+                        try {
+                          await _cartService.updateProductQuantity(userId, cartItem.product.id!, selectedQuantity);
+                          cartProvider.updateQuantity(cartItem.product, selectedQuantity);
+                        } catch (e) {
+                          if (mounted) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(content: Text('Failed to update quantity: ${e.toString()}')),
+                            );
+                          }
+                        }
+                      }
+                    }
+                  },
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 0, vertical: 0),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Text(
+                          'Qty ${cartItem.quantity}',
+                          style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w500),
+                        ),
+                        const SizedBox(width: 4),
+                        const Icon(Icons.keyboard_arrow_down, size: 20),
+                      ],
+                    ),
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(width: 16),
+            // Kolom Kanan: Detail Produk (Nama, Kategori, Harga)
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start, // Sejajarkan teks ke kiri
+                mainAxisAlignment: MainAxisAlignment.spaceBetween, // Dorong elemen ke atas dan bawah
+                children: [
+                  // Bagian atas: Nama dan Kategori
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        cartItem.product.name,
+                        style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                          fontWeight: FontWeight.bold,
+                        ),
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        cartItem.product.category,
+                        style: TextStyle(
+                          color: Colors.grey[600],
+                          fontSize: 14,
+                        ),
+                      ),
+                    ],
+                  ),
+                  // Bagian bawah: Harga
+                  Align( // Gunakan Align untuk menempatkan harga di kanan bawah
+                    alignment: Alignment.bottomRight,
+                    child: Text(
                       "Rp ${cartItem.totalPrice.toStringAsFixed(0).replaceAllMapped(RegExp(r'(\d{1,3})(?=(\d{3})+(?!\d))'),(match) => '${match[1]}.',)}",
                       style: Theme.of(context).textTheme.bodyLarge?.copyWith(
                         fontWeight: FontWeight.bold,
                       ),
                     ),
-                  ],
-                ),
-              ],
+                  ),
+                ],
+              ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }

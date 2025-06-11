@@ -6,14 +6,14 @@ import 'cartpage.dart';
 import 'productPageDetail.dart';
 import '../../models/Product.dart';
 import '../../services/ProductService.dart';
-import '../../services/FavoriteService.dart'; // <--- Import ini
+import '../../services/FavoriteService.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:provider/provider.dart';
 import 'package:helloworld/presentation/pages/cart_provider.dart';
+import '../../models/CartItem.dart'; // <--- PASTIKAN INI ADA
 import 'package:url_launcher/url_launcher.dart';
 
 // Fungsi async untuk dapatkan userId dari SharedPreferences
-// Ini sudah ada, pastikan tidak terduplikasi.
 Future<int?> getUserId() async {
   final prefs = await SharedPreferences.getInstance();
   if (prefs.containsKey('userId')) {
@@ -109,28 +109,28 @@ class _ProductPageState extends State<ProductPage> {
   int _currentPage = 0;
   bool _isFavorited = false;
   final FavoriteService _favoriteService = FavoriteService();
-  int? _currentUserId; // <--- Tambahkan variabel ini untuk menyimpan userId
+  int? _currentUserId;
+
+  static const int MAX_QUANTITY_PER_ITEM = 10;
+  bool _isAddingToCart = false; // <--- Variabel baru untuk melacak status penambahan
 
   @override
   void initState() {
     super.initState();
-    _initializeProductAndFavorites(); // <--- Panggil fungsi inisialisasi baru
+    _initializeProductAndFavorites();
   }
 
-  // Fungsi inisialisasi baru
   Future<void> _initializeProductAndFavorites() async {
-    _currentUserId = await getUserId(); // Dapatkan userId saat inisialisasi
+    _currentUserId = await getUserId();
     if (_currentUserId == null) {
-      // Handle case where user is not logged in (e.g., show a message or redirect)
       print('User is not logged in. Cannot fetch favorites.');
-      // Anda bisa menampilkan SnackBar, redirect ke login, dll.
       if(mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text('Please log in to use favorites.')),
         );
       }
       setState(() {
-        isLoading = false; // Tetapkan isLoading menjadi false agar UI tidak terjebak
+        isLoading = false;
       });
       return;
     }
@@ -140,7 +140,6 @@ class _ProductPageState extends State<ProductPage> {
   void fetchProductDetail() async {
     try {
       Product fetchedProduct = await ProductService().getProductById(widget.id!);
-      // Cek status favorit menggunakan _currentUserId
       bool favorited = await _favoriteService.isProductFavorited(_currentUserId!, fetchedProduct);
       setState(() {
         product = fetchedProduct;
@@ -156,15 +155,46 @@ class _ProductPageState extends State<ProductPage> {
   }
 
   Future<void> addToCart(int userId, int productId) async {
-    final url = Uri.parse('http://10.0.2.2:8080/api/cart/add?userId=$userId&productId=$productId');
+    if (_isAddingToCart) return; // <--- Cegah panggilan ganda jika sedang dalam proses
+
+    setState(() {
+      _isAddingToCart = true; // Aktifkan flag saat proses dimulai
+    });
 
     try {
-      await Future.delayed(const Duration(milliseconds: 500));
+      final cartProvider = Provider.of<CartProvider>(context, listen: false);
+
+      CartItem? existingCartItem;
+      for (var item in cartProvider.items) {
+        if (item.product.id == productId) {
+          existingCartItem = item;
+          break;
+        }
+      }
+
+      if (existingCartItem != null && existingCartItem.quantity >= MAX_QUANTITY_PER_ITEM) {
+        if (mounted) {
+          _showQuantityFullNotification();
+        }
+        return; // Hentikan proses jika sudah mencapai batas
+      }
+
+      int quantityToRequest = 1; // Selalu minta backend untuk menambah 1
+
+      // Jika backend Anda HANYA mendukung "add 1", maka logic berikut ini benar.
+      // Jika backend Anda bisa "mengupdate kuantitas", maka Anda bisa mengirim quantityToRequest = existingCartItem.quantity + 1;
+      // Namun, karena ada masalah penambahan banyak, kita akan asumsikan backend Anda menambahkan 1 setiap kali API ini dipanggil.
+
+      final url = Uri.parse('http://10.0.2.2:8080/api/cart/add?userId=$userId&productId=$productId'); // <--- Hapus parameter &quantity jika backend hanya tambah 1
+
+      // Hapus Future.delayed ini, ini bisa menyebabkan masalah double-tap
+      // await Future.delayed(const Duration(milliseconds: 500));
+
       final response = await http.post(url);
 
       if (response.statusCode == 200) {
-        final cartProvider = Provider.of<CartProvider>(context, listen: false);
-        cartProvider.addExistingItem(product!, 1);
+        // Karena backend hanya menambah 1, kita juga hanya menambah 1 di frontend
+        cartProvider.addItem(product!); // Menggunakan addItem yang menambah 1 atau membuat baru
         _showAddedToBagOverlay(cartProvider.totalItems);
       } else {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -175,7 +205,55 @@ class _ProductPageState extends State<ProductPage> {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text("Error: $e")),
       );
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isAddingToCart = false; // Nonaktifkan flag setelah proses selesai (baik berhasil/gagal)
+        });
+      }
     }
+  }
+
+  void _showQuantityFullNotification() {
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(16.0),
+          ),
+          title: const Text(
+            "Quantity Full!",
+            textAlign: TextAlign.center,
+            style: TextStyle(fontWeight: FontWeight.bold),
+          ),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const Icon(
+                Icons.info_outline,
+                color: Colors.red,
+                size: 60,
+              ),
+              const SizedBox(height: 16),
+              Text(
+                "You've reached the maximum quantity (${MAX_QUANTITY_PER_ITEM}) for this item in your cart.",
+                textAlign: TextAlign.center,
+              ),
+            ],
+          ),
+          actions: [
+            TextButton(
+              onPressed: () {
+                Navigator.of(context).pop();
+              },
+              child: const Text("OK"),
+            ),
+          ],
+        );
+      },
+    );
   }
 
   void _showAddedToBagOverlay(int totalItems) {
@@ -380,7 +458,6 @@ class _ProductPageState extends State<ProductPage> {
 
   @override
   Widget build(BuildContext context) {
-    // Tambahkan kondisi untuk menangani jika _currentUserId null
     if (isLoading || _currentUserId == null) {
       return Scaffold(
         body: Center(
@@ -389,13 +466,6 @@ class _ProductPageState extends State<ProductPage> {
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
               Text('Please log in to view product details and use favorites.', textAlign: TextAlign.center,),
-              // Tombol untuk navigasi ke halaman login jika diperlukan
-              // ElevatedButton(
-              //   onPressed: () {
-              //     Navigator.pushReplacement(context, MaterialPageRoute(builder: (context) => LoginPage()));
-              //   },
-              //   child: const Text('Login'),
-              // ),
             ],
           )
               : const CircularProgressIndicator(),
@@ -512,8 +582,8 @@ class _ProductPageState extends State<ProductPage> {
 
                   Expanded(
                     child: ElevatedButton(
-                      onPressed: () async {
-                        // Pastikan _currentUserId tidak null sebelum memanggil addToCart
+                      // Nonaktifkan tombol saat _isAddingToCart true
+                      onPressed: _isAddingToCart ? null : () async {
                         if (_currentUserId == null) {
                           ScaffoldMessenger.of(context).showSnackBar(
                             const SnackBar(content: Text('Please log in to add to cart.')),
@@ -527,12 +597,20 @@ class _ProductPageState extends State<ProductPage> {
                         foregroundColor: Colors.white,
                         padding: const EdgeInsets.symmetric(vertical: 16),
                       ),
-                      child: const Text("Add to Cart"),
+                      child: _isAddingToCart
+                          ? const SizedBox(
+                        width: 20,
+                        height: 20,
+                        child: CircularProgressIndicator(
+                          strokeWidth: 2,
+                          valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                        ),
+                      )
+                          : const Text("Add to Cart"),
                     ),
                   ),
                   const SizedBox(width: 8),
 
-                  // Favorite Button (MODIFIED)
                   Expanded(
                     child: OutlinedButton(
                       onPressed: () async {

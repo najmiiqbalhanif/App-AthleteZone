@@ -1,4 +1,3 @@
-// services/CheckoutService.dart
 import 'dart:convert';
 import 'package:helloworld/models/user.dart'; // Make sure this is your User model
 import 'package:http/http.dart' as http;

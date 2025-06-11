@@ -41,7 +41,7 @@ class _CheckoutPageState extends State<CheckoutPage> {
 
   List<String> pickupLocations = ['Bandung Store', 'Jakarta Store'];
   List<String> pickupTimes = ['10:00 AM', '1:00 PM', '4:00 PM'];
-  final checkoutService = CheckoutService(baseUrl: 'http://10.0.2.2:8080'); // **IMPORTANT:** Update your base URL
+  final checkoutService = CheckoutService(baseUrl: 'http://10.0.2.2:8080/CheckoutService'); // **IMPORTANT:** Update your base URL
 
   @override
   void initState() {

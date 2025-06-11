@@ -1,7 +1,9 @@
+// lib/presentation/pages/profilepage.dart
 import 'package:flutter/material.dart';
 import '../../services/UserService.dart';
 import '../../models/user.dart';
 import 'editprofilepage.dart';
+import 'FavoriteProductsPage.dart'; // <--- Import halaman favorit
 
 class ProfilePage extends StatefulWidget {
   const ProfilePage({super.key});
@@ -125,11 +127,21 @@ class _ProfilePageState extends State<ProfilePage> {
               padding: const EdgeInsets.symmetric(horizontal: 16.0),
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.spaceAround,
-                children: const [
-                  _MenuItem(icon: Icons.favorite, label: 'Favorite'),
-                  _MenuItem(icon: Icons.qr_code, label: 'Access'),
-                  _MenuItem(icon: Icons.event, label: 'Event'),
-                  _MenuItem(icon: Icons.settings, label: 'Settings'),
+                children: [
+                  // MODIFIED: Tombol Favorite
+                  _MenuItem(
+                    icon: Icons.favorite,
+                    label: 'Favorite',
+                    onTap: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(builder: (context) => const FavoriteProductsPage()),
+                      );
+                    },
+                  ),
+                  const _MenuItem(icon: Icons.qr_code, label: 'Access'),
+                  const _MenuItem(icon: Icons.event, label: 'Event'),
+                  const _MenuItem(icon: Icons.settings, label: 'Settings'),
                 ],
               ),
             ),
@@ -153,20 +165,24 @@ class _ProfilePageState extends State<ProfilePage> {
 class _MenuItem extends StatelessWidget {
   final IconData icon;
   final String label;
+  final VoidCallback? onTap; // Tambahkan properti onTap
 
-  const _MenuItem({required this.icon, required this.label});
+  const _MenuItem({required this.icon, required this.label, this.onTap}); // Perbarui konstruktor
 
   @override
   Widget build(BuildContext context) {
-    return Column(
-      children: [
-        Icon(icon, size: 28, color: Color(0xFF4A4A4A)),
-        const SizedBox(height: 4),
-        Text(
-          label,
-          style: const TextStyle(fontSize: 12),
-        ),
-      ],
+    return GestureDetector( // Gunakan GestureDetector untuk menangani tap
+      onTap: onTap,
+      child: Column(
+        children: [
+          Icon(icon, size: 28, color: Color(0xFF4A4A4A)),
+          const SizedBox(height: 4),
+          Text(
+            label,
+            style: const TextStyle(fontSize: 12),
+          ),
+        ],
+      ),
     );
   }
 }

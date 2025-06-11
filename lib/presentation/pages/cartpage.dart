@@ -1,3 +1,4 @@
+// lib/presentation/pages/cartpage.dart
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:helloworld/presentation/pages/cart_provider.dart';
@@ -178,6 +179,117 @@ class _CartPageState extends State<CartPage> {
     );
   }
 
+  // Fungsi baru untuk menampilkan pemilih kuantitas
+  Future<int?> _showQuantityPicker(BuildContext context, int currentQuantity) async {
+    final double itemHeight = 50; // Sesuaikan dengan itemExtent di ListWheelScrollView
+
+    final FixedExtentScrollController scrollController =
+    FixedExtentScrollController(initialItem: currentQuantity - 1);
+    int selectedQuantity = currentQuantity;
+
+    return await showModalBottomSheet<int>(
+      context: context,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+      ),
+      builder: (BuildContext context) {
+        return Container(
+          height: MediaQuery.of(context).size.height * 0.45,
+          padding: const EdgeInsets.all(16.0),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Container(
+                width: 40,
+                height: 5,
+                decoration: BoxDecoration(
+                  color: Colors.grey[300],
+                  borderRadius: BorderRadius.circular(2.5),
+                ),
+              ),
+              const SizedBox(height: 16),
+              ListTile(
+                title: Text(
+                  "Remove",
+                  style: TextStyle(color: Colors.red[700], fontSize: 18),
+                  textAlign: TextAlign.center,
+                ),
+                onTap: () {
+                  Navigator.pop(context, 0);
+                },
+              ),
+              const Divider(),
+              Expanded(
+                child: Stack(
+                  alignment: Alignment.center,
+                  children: [
+                    // Garis indikator abu-abu terang di tengah, membingkai angka
+                    Positioned.fill(
+                      child: Align(
+                        alignment: Alignment.center,
+                        child: Container(
+                          height: itemHeight, // Tinggi garis sama dengan tinggi item
+                          // Lebar container ini akan menyesuaikan dengan lebar Stack
+                          decoration: BoxDecoration(
+                            color: Colors.grey[200], // Warna abu-abu terang
+                            borderRadius: BorderRadius.circular(8), // Sudut melengkung
+                          ),
+                        ),
+                      ),
+                    ),
+                    ListWheelScrollView.useDelegate(
+                      controller: scrollController,
+                      itemExtent: itemHeight, // Tinggi setiap item dalam list
+                      perspective: 0.003,
+                      diameterRatio: 1.5,
+                      physics: const FixedExtentScrollPhysics(),
+                      onSelectedItemChanged: (index) {
+                        selectedQuantity = index + 1;
+                      },
+                      childDelegate: ListWheelChildBuilderDelegate(
+                        builder: (BuildContext context, int index) {
+                          final int qty = index + 1;
+                          return Center(
+                            child: Text(
+                              '$qty',
+                              style: TextStyle(
+                                fontSize: 24,
+                                fontWeight: (index + 1) == currentQuantity ? FontWeight.bold : FontWeight.normal,
+                                color: (index + 1) == currentQuantity ? Colors.blue[900] : Colors.black,
+                              ),
+                            ),
+                          );
+                        },
+                        childCount: 100,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 16),
+              SizedBox(
+                width: double.infinity,
+                child: ElevatedButton(
+                  onPressed: () {
+                    Navigator.pop(context, selectedQuantity);
+                  },
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: const Color(0xFF041761),
+                    padding: const EdgeInsets.symmetric(vertical: 12),
+                  ),
+                  child: const Text(
+                    'Done',
+                    style: TextStyle(color: Colors.white, fontSize: 16),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
   Widget _buildCartItem(BuildContext context, CartItem cartItem, int userId) {
     final cartProvider = Provider.of<CartProvider>(context, listen: false);
 
@@ -186,7 +298,6 @@ class _CartPageState extends State<CartPage> {
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Gambar dan "Just a few left" serta Qty di kolom terpisah agar Qty bisa sejajar gambar
           Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
@@ -201,111 +312,49 @@ class _CartPageState extends State<CartPage> {
                   ),
                 ),
               ),
-              const SizedBox(height: 8), // Spacer between image and Qty/stock
-              // START Custom Quantity Dropdown
+              const SizedBox(height: 8),
               GestureDetector(
                 onTap: () async {
-                  final int? selectedQuantity = await showModalBottomSheet<int>(
-                    context: context,
-                    builder: (BuildContext context) {
-                      return Container(
-                        padding: const EdgeInsets.all(16.0),
-                        child: Column(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            Container(
-                              width: 40,
-                              height: 5,
-                              decoration: BoxDecoration(
-                                color: Colors.grey[300],
-                                borderRadius: BorderRadius.circular(2.5),
-                              ),
-                            ),
-                            const SizedBox(height: 16),
-                            // "Remove" option
-                            ListTile(
-                              title: Text(
-                                "Remove",
-                                style: TextStyle(color: Colors.red[700], fontSize: 18),
-                                textAlign: TextAlign.center,
-                              ),
-                              onTap: () => Navigator.pop(context, 0), // Return 0 for remove
-                            ),
-                            const Divider(),
-                            Expanded(
-                              child: ListView.builder(
-                                shrinkWrap: true,
-                                itemCount: 100, // Quantity options from 1 to 100
-                                itemBuilder: (context, index) {
-                                  final int qty = index + 1;
-                                  return ListTile(
-                                    title: Text(
-                                      "$qty",
-                                      style: TextStyle(
-                                        fontSize: 18,
-                                        fontWeight: cartItem.quantity == qty ? FontWeight.bold : FontWeight.normal,
-                                        color: cartItem.quantity == qty ? Colors.blue[900] : Colors.black,
-                                      ),
-                                      textAlign: TextAlign.center,
-                                    ),
-                                    onTap: () => Navigator.pop(context, qty),
-                                  );
-                                },
-                              ),
-                            ),
-                            const SizedBox(height: 16),
-                            SizedBox(
-                              width: double.infinity,
-                              child: ElevatedButton(
-                                onPressed: () {
-                                  Navigator.pop(context); // Close the bottom sheet without selecting
-                                },
-                                style: ElevatedButton.styleFrom(
-                                  backgroundColor: const Color(0xFF041761),
-                                  padding: const EdgeInsets.symmetric(vertical: 12),
-                                ),
-                                child: const Text(
-                                  'Done',
-                                  style: TextStyle(color: Colors.white, fontSize: 16),
-                                ),
-                              ),
-                            ),
-                          ],
-                        ),
-                      );
-                    },
-                  );
+                  final int? selectedQuantity = await _showQuantityPicker(context, cartItem.quantity);
 
                   if (selectedQuantity != null) {
                     if (selectedQuantity == 0) {
                       try {
                         await _cartService.removeProductFromCart(userId, cartItem.product.id!);
                         cartProvider.removeItem(cartItem.product);
+                        if (mounted) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(content: Text('${cartItem.product.name} removed from cart')),
+                          );
+                        }
                       } catch (e) {
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          SnackBar(content: Text('Failed to remove item: ${e.toString()}')),
-                        );
+                        if (mounted) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(content: Text('Failed to remove item: ${e.toString()}')),
+                          );
+                        }
                       }
-                    } else {
+                    } else if (selectedQuantity != cartItem.quantity) {
                       try {
                         await _cartService.updateProductQuantity(userId, cartItem.product.id!, selectedQuantity);
                         cartProvider.updateQuantity(cartItem.product, selectedQuantity);
+                        if (mounted) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(content: Text('Quanitity ${cartItem.product.name} updated to $selectedQuantity')),
+                          );
+                        }
                       } catch (e) {
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          SnackBar(content: Text('Failed to update quantity: ${e.toString()}')),
-                        );
+                        if (mounted) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(content: Text('Failed to update quantity: ${e.toString()}')),
+                          );
+                        }
                       }
                     }
                   }
                 },
-                // Hapus decoration untuk menghilangkan border
                 child: Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 0, vertical: 0), // Hapus padding horizontal/vertical
-                  // decoration: BoxDecoration( // Hapus atau komen bagian decoration ini
-                  //   border: Border.all(color: Colors.grey.shade400),
-                  //   borderRadius: BorderRadius.circular(8),
-                  //   color: Colors.white,
-                  // ),
+                  padding: const EdgeInsets.symmetric(horizontal: 0, vertical: 0),
                   child: Row(
                     mainAxisSize: MainAxisSize.min,
                     children: [
@@ -313,7 +362,7 @@ class _CartPageState extends State<CartPage> {
                         'Qty ${cartItem.quantity}',
                         style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w500),
                       ),
-                      const SizedBox(width: 4), // Kurangi sedikit jarak
+                      const SizedBox(width: 4),
                       const Icon(Icons.keyboard_arrow_down, size: 20),
                     ],
                   ),
@@ -321,7 +370,7 @@ class _CartPageState extends State<CartPage> {
               ),
             ],
           ),
-          const SizedBox(width: 16), // Jarak antara kolom gambar/qty dan kolom detail produk
+          const SizedBox(width: 16),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,

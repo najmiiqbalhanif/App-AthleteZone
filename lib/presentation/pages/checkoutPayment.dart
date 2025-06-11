@@ -3,10 +3,9 @@ import 'package:helloworld/presentation/pages/profilepage.dart';
 import '../../models/Payment.dart';
 import '../../services/CheckoutService.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import '../../models/CartItem.dart';
+import '../../models/CartItem.dart'; // Import CartItem
 import '../../models/user.dart';
-import '../mainLayout.dart';
-import '../../services/notification_service.dart';
+import '../mainLayout.dart'; // Import MainLayout
 
 String fullName = '';
 
@@ -32,6 +31,7 @@ class _CheckoutPageState extends State<CheckoutPage> {
   TextEditingController _addressController = TextEditingController();
   TextEditingController _emailController = TextEditingController();
 
+
   String? _selectedPaymentMethod = 'credit';
 
   bool isDelivery = true;
@@ -40,7 +40,7 @@ class _CheckoutPageState extends State<CheckoutPage> {
 
   List<String> pickupLocations = ['Bandung Store', 'Jakarta Store'];
   List<String> pickupTimes = ['10:00 AM', '1:00 PM', '4:00 PM'];
-  final checkoutService = CheckoutService(baseUrl: 'http://10.0.2.2:8080');
+  final checkoutService = CheckoutService(baseUrl: 'http://10.0.2.2:8080'); // **IMPORTANT:** Update your base URL
 
   @override
   void initState() {
@@ -50,14 +50,16 @@ class _CheckoutPageState extends State<CheckoutPage> {
 
   Future<void> _loadUserData() async {
     final prefs = await SharedPreferences.getInstance();
-    final userId = prefs.getInt('userId');
+    final userId = prefs.getInt('userId'); // Get user ID from shared preferences
 
     if (userId != null) {
       try {
-        final User user = await checkoutService.getUserById(userId);
+        final User user = await checkoutService.getUserById(userId); // Fetch user data
         setState(() {
+          // Assume fullname from backend is "First Last"
           _fullNameController.text = user.fullname;
           _emailController.text = user.email;
+
         });
       } catch (e) {
         print('Error loading user data: $e');
@@ -82,21 +84,19 @@ class _CheckoutPageState extends State<CheckoutPage> {
         elevation: 1,
         title: Row(
           children: [
-            const Text(
-              "AthleteZone",
-              style: TextStyle(
-                color: Colors.black,
-                fontWeight: FontWeight.bold,
-                fontSize: 18,
-              ),
-            ),
-            const Spacer(),
-            const Icon(Icons.search, color: Colors.black),
-            const SizedBox(width: 20),
-            const Icon(Icons.shopping_cart_outlined, color: Colors.black),
-            const SizedBox(width: 20),
+            Text("AthleteZone",
+                style: TextStyle(
+                  color: Colors.black,
+                  fontWeight: FontWeight.bold,
+                  fontSize: 18,
+                )),
+            Spacer(),
+            Icon(Icons.search, color: Colors.black),
+            SizedBox(width: 20),
+            Icon(Icons.shopping_cart_outlined, color: Colors.black),
+            SizedBox(width: 20),
             IconButton(
-              icon: const Icon(Icons.account_circle_outlined, color: Colors.black),
+              icon: Icon(Icons.account_circle_outlined, color: Colors.black),
               onPressed: () {
                 Navigator.push(
                   context,
@@ -110,7 +110,7 @@ class _CheckoutPageState extends State<CheckoutPage> {
       body: Stepper(
         currentStep: _currentStep,
         onStepContinue: () {
-          if (_currentStep == 0) {
+          if (_currentStep == 0) { // Only validate form on step 0
             if (_formKey.currentState!.validate()) {
               setState(() {
                 if (_currentStep < 2) _currentStep += 1;
@@ -136,12 +136,12 @@ class _CheckoutPageState extends State<CheckoutPage> {
                 if (!isLastStep)
                   ElevatedButton(
                     onPressed: details.onStepContinue,
+                    child: Text('Continue', style: TextStyle(color: Colors.white)),
                     style: ElevatedButton.styleFrom(
                       backgroundColor: Colors.blue[900],
                     ),
-                    child: const Text('Continue', style: TextStyle(color: Colors.white)),
                   ),
-                if (!isLastStep) const SizedBox(width: 20),
+                if (!isLastStep) SizedBox(width: 20),
                 TextButton(
                   onPressed: details.onStepCancel,
                   child: Text('Back', style: TextStyle(color: Colors.blue[900])),
@@ -153,7 +153,7 @@ class _CheckoutPageState extends State<CheckoutPage> {
         },
         steps: [
           Step(
-            title: const Text("1. Delivery Options"),
+            title: Text("1. Delivery Options"),
             content: Form(
               key: _formKey,
               child: Column(
@@ -169,7 +169,7 @@ class _CheckoutPageState extends State<CheckoutPage> {
                           },
                           style: ElevatedButton.styleFrom(
                             backgroundColor: isDelivery ? const Color(0xFF041761) : Colors.white,
-                            side: const BorderSide(color: Color(0xFF041761)),
+                            side: BorderSide(color: const Color(0xFF041761)),
                           ),
                           child: Text(
                             "Delivery",
@@ -179,7 +179,7 @@ class _CheckoutPageState extends State<CheckoutPage> {
                           ),
                         ),
                       ),
-                      const SizedBox(width: 10),
+                      SizedBox(width: 10),
                       Expanded(
                         child: ElevatedButton(
                           onPressed: () {
@@ -189,7 +189,7 @@ class _CheckoutPageState extends State<CheckoutPage> {
                           },
                           style: ElevatedButton.styleFrom(
                             backgroundColor: !isDelivery ? const Color(0xFF041761) : Colors.white,
-                            side: const BorderSide(color: Color(0xFF041761)),
+                            side: BorderSide(color: const Color(0xFF041761)),
                           ),
                           child: Text(
                             "Pick Up",
@@ -201,27 +201,28 @@ class _CheckoutPageState extends State<CheckoutPage> {
                       ),
                     ],
                   ),
-                  const SizedBox(height: 10),
+                  SizedBox(height: 10),
                   if (isDelivery) ...[
                     TextFormField(
                       controller: _fullNameController,
-                      decoration: const InputDecoration(labelText: "Full Name"),
+                      decoration: InputDecoration(labelText: "Full Name"),
                       validator: (value) => value == null || value.isEmpty ? 'Required' : null,
+                      // onChanged is not needed if using controller and validation is done on continue
                     ),
                     TextFormField(
                       controller: _addressController,
-                      decoration: const InputDecoration(labelText: "Address"),
+                      decoration: InputDecoration(labelText: "Address"),
                       validator: (value) => value == null || value.isEmpty ? 'Required' : null,
                     ),
                     TextFormField(
                       controller: _emailController,
-                      decoration: const InputDecoration(labelText: "Email"),
+                      decoration: InputDecoration(labelText: "Email"),
                       validator: (value) => value == null || value.isEmpty ? 'Required' : null,
                     ),
                   ] else ...[
                     DropdownButtonFormField<String>(
-                      decoration: const InputDecoration(labelText: "Pickup Location"),
-                      value: selectedLocation,
+                      decoration: InputDecoration(labelText: "Pickup Location"),
+                      value: selectedLocation, // Set initial value
                       items: pickupLocations.map((location) {
                         return DropdownMenuItem(value: location, child: Text(location));
                       }).toList(),
@@ -229,8 +230,8 @@ class _CheckoutPageState extends State<CheckoutPage> {
                       validator: (value) => value == null || value.isEmpty ? 'Required' : null,
                     ),
                     DropdownButtonFormField<String>(
-                      decoration: const InputDecoration(labelText: "Pickup Time"),
-                      value: selectedTime,
+                      decoration: InputDecoration(labelText: "Pickup Time"),
+                      value: selectedTime, // Set initial value
                       items: pickupTimes.map((time) {
                         return DropdownMenuItem(value: time, child: Text(time));
                       }).toList(),
@@ -245,23 +246,23 @@ class _CheckoutPageState extends State<CheckoutPage> {
             state: _currentStep == 0 ? StepState.editing : StepState.indexed,
           ),
           Step(
-            title: const Text("2. Payment"),
+            title: Text("2. Payment"),
             content: Column(
               children: [
                 RadioListTile(
-                  title: const Text("Credit Card"),
+                  title: Text("Credit Card"),
                   value: "credit",
                   groupValue: _selectedPaymentMethod,
                   onChanged: (value) => setState(() => _selectedPaymentMethod = value.toString()),
                 ),
                 RadioListTile(
-                  title: const Text("PayPal"),
+                  title: Text("PayPal"),
                   value: "paypal",
                   groupValue: _selectedPaymentMethod,
                   onChanged: (value) => setState(() => _selectedPaymentMethod = value.toString()),
                 ),
                 RadioListTile(
-                  title: const Text("Cash on Delivery"),
+                  title: Text("Cash on Delivery"),
                   value: "cod",
                   groupValue: _selectedPaymentMethod,
                   onChanged: (value) => setState(() => _selectedPaymentMethod = value.toString()),
@@ -272,34 +273,43 @@ class _CheckoutPageState extends State<CheckoutPage> {
             state: _currentStep == 1 ? StepState.editing : StepState.indexed,
           ),
           Step(
-            title: const Text("3. Order Review"),
+            title: Text("3. Order Review"),
             content: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const Text('Order Summary:', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18)),
-                const SizedBox(height: 10),
+                // Display Cart Items dynamically here
+                Text('Order Summary:', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18)),
+                SizedBox(height: 10),
+                // Using a Column and iterating through cartItems
+                // Consider using ListView.builder if the list can be very long and needs to scroll independently
+                // For a potentially shorter list within a Stepper, Column is fine.
                 ...widget.cartItems.map((item) => Card(
                   elevation: 2,
-                  margin: const EdgeInsets.symmetric(vertical: 5),
+                  margin: EdgeInsets.symmetric(vertical: 5),
                   child: Padding(
-                    padding: const EdgeInsets.all(12),
+                    padding: EdgeInsets.all(12),
                     child: Row(
                       children: [
+                        // Assuming your CartItem has a product object with photoUrl
+                        // If not, adjust `item.product.photoUrl` accordingly
                         Image.network(item.product.photoUrl, width: 80, height: 80, fit: BoxFit.cover),
-                        const SizedBox(width: 10),
+                        SizedBox(width: 10),
                         Expanded(
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              Text(item.product.name, style: const TextStyle(fontWeight: FontWeight.bold)),
+                              Text(item.product.name, style: TextStyle(fontWeight: FontWeight.bold)),
                               Text('Qty: ${item.quantity}'),
-                              const SizedBox(height: 5),
+                              // Add other product details from CartItem as needed, e.g., size, color
+                              // Text('Size: ${item.product.size}'),
+                              // Text('Color: ${item.product.color}'),
+                              SizedBox(height: 5),
                               Text(
                                 'Rp ${item.totalPrice.toStringAsFixed(0).replaceAllMapped(
                                   RegExp(r'(\d{1,3})(?=(\d{3})+(?!\d))'),
                                       (match) => '${match[1]}.',
                                 )}',
-                                style: const TextStyle(fontWeight: FontWeight.bold),
+                                style: TextStyle(fontWeight: FontWeight.bold),
                               ),
                             ],
                           ),
@@ -307,8 +317,8 @@ class _CheckoutPageState extends State<CheckoutPage> {
                       ],
                     ),
                   ),
-                )).toList(),
-                const Divider(),
+                )).toList(), // Convert iterable to List of Widgets
+                Divider(),
                 Align(
                   alignment: Alignment.centerRight,
                   child: Text(
@@ -316,26 +326,28 @@ class _CheckoutPageState extends State<CheckoutPage> {
                       RegExp(r'(\d{1,3})(?=(\d{3})+(?!\d))'),
                           (match) => '${match[1]}.',
                     )}',
-                    style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+                    style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
                   ),
                 ),
-                const SizedBox(height: 20),
+                SizedBox(height: 20),
                 Center(
                   child: ElevatedButton(
                     onPressed: () async {
+                      // Final validation for pick-up fields if applicable
                       if (!isDelivery && (selectedLocation == null || selectedTime == null)) {
                         ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(content: Text('Please select pickup location and time.')),
+                          SnackBar(content: Text('Please select pickup location and time.')),
                         );
                         return;
                       }
 
+                      // Retrieve user ID
                       final prefs = await SharedPreferences.getInstance();
                       final userId = prefs.getInt('userId');
 
                       if (userId == null) {
                         ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(content: Text('User not logged in.')),
+                          SnackBar(content: Text('User not logged in.')),
                         );
                         return;
                       }
@@ -348,48 +360,43 @@ class _CheckoutPageState extends State<CheckoutPage> {
                           totalAmount: widget.totalPrice,
                         );
 
-                        final items = widget.cartItems.map((cartItem) {
-                          // Pastikan cartItem.product dan cartItem.product.id tidak null
-                          if (cartItem.product == null || cartItem.product.id == null) {
-                            throw Exception('Product ID is null for item: ${cartItem.product.name}');
-                          }
-                          return PaymentItemDTO(
-                            userId: userId,
-                            name: cartItem.product.name,
-                            quantity: cartItem.quantity,
-                            price: cartItem.product.price,
-                            subTotal: cartItem.totalPrice,
-                          );
-                        }).toList();
+                        final items = widget.cartItems.map((cartItem) => PaymentItemDTO(
+                          userId: userId,
+                          name: cartItem.product.name,
+                          quantity: cartItem.quantity,
+                          price: cartItem.product.price,
+                          subTotal: cartItem.totalPrice,
+                        )).toList();
 
                         print("Submitting checkout...");
                         await checkoutService.submitCheckout(payment, items);
                         print("Checkout submitted!");
 
-                        NotificationService.showNotification(
-                          title: 'Order Diterima!',
-                          body: 'Pesananmu berhasil disubmit. Terima kasih sudah berbelanja.',
-                          id: DateTime.now().millisecondsSinceEpoch ~/ 1000,
-                          payload: 'order_success', // Payload sudah bisa dilewatkan
-                        );
-
                         showDialog(
                           context: context,
                           builder: (context) => AlertDialog(
-                            title: const Text("Order Confirmed"),
-                            content: const Text("Thank you for your purchase!"),
+                            title: Text("Order Confirmed"),
+                            content: Text("Thank you for your purchase!"),
                             actions: [
                               TextButton(
                                 onPressed: () {
-                                  Navigator.pop(context);
+                                  Navigator.pop(context); // Tutup AlertDialog
 
+                                  // Ganti baris ini:
+                                  // Navigator.pushAndRemoveUntil(
+                                  //   context,
+                                  //   MaterialPageRoute(builder: (context) => OrdersPage()),
+                                  //       (route) => false,
+                                  // );
+
+                                  // Dengan ini: Kembali ke MainLayout dan set indeks ke tab Orders (indeks 2)
                                   Navigator.pushAndRemoveUntil(
                                     context,
                                     MaterialPageRoute(builder: (context) => const MainLayout(initialIndex: 2)),
-                                        (Route<dynamic> route) => false,
+                                        (Route<dynamic> route) => false, // Ini akan menghapus semua rute di bawah MainLayout
                                   );
                                 },
-                                child: const Text("OK"),
+                                child: Text("OK"),
                               ),
                             ],
                           ),
@@ -399,15 +406,14 @@ class _CheckoutPageState extends State<CheckoutPage> {
                         ScaffoldMessenger.of(context).showSnackBar(
                           SnackBar(content: Text('Failed to submit order: $e')),
                         );
-                        // Penting: Jika ada error, notifikasi tidak akan muncul.
-                        // Pastikan backend tidak mengembalikan ID null.
                       }
+
                     },
                     style: ElevatedButton.styleFrom(
                       backgroundColor: const Color(0xFF041761),
-                      padding: const EdgeInsets.symmetric(horizontal: 40, vertical: 12),
+                      padding: EdgeInsets.symmetric(horizontal: 40, vertical: 12),
                     ),
-                    child: const Text("Submit Order", style: TextStyle(color: Colors.white)),
+                    child: Text("Submit Order", style: TextStyle(color: Colors.white)),
                   ),
                 ),
               ],

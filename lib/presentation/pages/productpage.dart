@@ -5,21 +5,23 @@ import 'cartpage.dart';
 import 'productPageDetail.dart';
 import '../../models/Product.dart';
 import '../../services/ProductService.dart';
+import '../../services/FavoriteService.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:provider/provider.dart';
-import 'package:helloworld/presentation/pages/cart_provider.dart'; // Sesuaikan path ini
+import 'package:helloworld/presentation/pages/cart_provider.dart';
+import '../../models/CartItem.dart'; // <--- PASTIKAN INI ADA
+import 'package:url_launcher/url_launcher.dart';
 
 // Fungsi async untuk dapatkan userId dari SharedPreferences
 Future<int?> getUserId() async {
   final prefs = await SharedPreferences.getInstance();
-  // Misal userId disimpan dengan key 'userId'
   if (prefs.containsKey('userId')) {
     return prefs.getInt('userId');
   }
-  return null; // Kalau tidak ada userId
+  return null;
 }
 
-// Dummy review data (moved here for global access or can be encapsulated)
+// Dummy review data (tetap sama)
 final List<Map<String, dynamic>> reviews = [
   {
     'name': 'Akimilakuy76 • May 3, 2025',
@@ -78,17 +80,12 @@ final List<Map<String, dynamic>> reviews = [
   }
 ];
 
-// Variabel global untuk status review yang diperluas
 bool _isReviewExpanded = false;
-
-// Getter untuk jumlah review
 int get reviewCount => reviews.length;
-
-// Getter untuk rating rata-rata
 double get averageRating {
   if (reviews.isEmpty) return 0.0;
   double raw = reviews.map((r) => r['rating'] as num).reduce((a, b) => a + b) / reviews.length;
-  return (raw * 2).round() / 2; // round to nearest .5
+  return (raw * 2).round() / 2;
 }
 
 class ProductPage extends StatefulWidget {
@@ -110,18 +107,42 @@ class _ProductPageState extends State<ProductPage> {
   final PageController _pageController = PageController();
   int _currentPage = 0;
   bool _isFavorited = false;
+  final FavoriteService _favoriteService = FavoriteService();
+  int? _currentUserId;
+
+  static const int MAX_QUANTITY_PER_ITEM = 10;
+  bool _isAddingToCart = false; // <--- Variabel baru untuk melacak status penambahan
 
   @override
   void initState() {
     super.initState();
+    _initializeProductAndFavorites();
+  }
+
+  Future<void> _initializeProductAndFavorites() async {
+    _currentUserId = await getUserId();
+    if (_currentUserId == null) {
+      print('User is not logged in. Cannot fetch favorites.');
+      if(mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Please log in to use favorites.')),
+        );
+      }
+      setState(() {
+        isLoading = false;
+      });
+      return;
+    }
     fetchProductDetail();
   }
 
   void fetchProductDetail() async {
     try {
       Product fetchedProduct = await ProductService().getProductById(widget.id!);
+      bool favorited = await _favoriteService.isProductFavorited(_currentUserId!, fetchedProduct);
       setState(() {
         product = fetchedProduct;
+        _isFavorited = favorited;
         isLoading = false;
       });
     } catch (e) {
@@ -133,26 +154,47 @@ class _ProductPageState extends State<ProductPage> {
   }
 
   Future<void> addToCart(int userId, int productId) async {
-    final url = Uri.parse('http://10.0.2.2:8080/api/cart/add?userId=$userId&productId=$productId');
+    if (_isAddingToCart) return; // <--- Cegah panggilan ganda jika sedang dalam proses
+
+    setState(() {
+      _isAddingToCart = true; // Aktifkan flag saat proses dimulai
+    });
 
     try {
-      // Simulate network delay for better UX
-      await Future.delayed(const Duration(milliseconds: 500));
+      final cartProvider = Provider.of<CartProvider>(context, listen: false);
+
+      CartItem? existingCartItem;
+      for (var item in cartProvider.items) {
+        if (item.product.id == productId) {
+          existingCartItem = item;
+          break;
+        }
+      }
+
+      if (existingCartItem != null && existingCartItem.quantity >= MAX_QUANTITY_PER_ITEM) {
+        if (mounted) {
+          _showQuantityFullNotification();
+        }
+        return; // Hentikan proses jika sudah mencapai batas
+      }
+
+      int quantityToRequest = 1; // Selalu minta backend untuk menambah 1
+
+      // Jika backend Anda HANYA mendukung "add 1", maka logic berikut ini benar.
+      // Jika backend Anda bisa "mengupdate kuantitas", maka Anda bisa mengirim quantityToRequest = existingCartItem.quantity + 1;
+      // Namun, karena ada masalah penambahan banyak, kita akan asumsikan backend Anda menambahkan 1 setiap kali API ini dipanggil.
+
+      final url = Uri.parse('http://10.0.2.2:8080/api/cart/add?userId=$userId&productId=$productId'); // <--- Hapus parameter &quantity jika backend hanya tambah 1
+
+      // Hapus Future.delayed ini, ini bisa menyebabkan masalah double-tap
+      // await Future.delayed(const Duration(milliseconds: 500));
 
       final response = await http.post(url);
 
       if (response.statusCode == 200) {
-        final cartProvider = Provider.of<CartProvider>(context, listen: false);
-
-        // Asumsi kuantitas yang ditambahkan adalah 1.
-        // Jika Anda memiliki mekanisme pemilihan kuantitas di ProductPage,
-        // gunakan kuantitas tersebut (misal: _selectedQuantity).
-        cartProvider.addExistingItem(product!, 1);
-
-        // --- UBAH BARIS INI ---
-        _showAddedToBagOverlay(cartProvider.totalItems); // Gunakan getter totalQuantity
-        // ---------------------
-
+        // Karena backend hanya menambah 1, kita juga hanya menambah 1 di frontend
+        cartProvider.addItem(product!); // Menggunakan addItem yang menambah 1 atau membuat baru
+        _showAddedToBagOverlay(cartProvider.totalItems);
       } else {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text("Failed to add product")),
@@ -162,7 +204,66 @@ class _ProductPageState extends State<ProductPage> {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text("Error: $e")),
       );
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isAddingToCart = false; // Nonaktifkan flag setelah proses selesai (baik berhasil/gagal)
+        });
+      }
     }
+  }
+
+  void _showQuantityFullNotification() {
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(16.0),
+          ),
+          title: const Text(
+            "Quantity Full",
+            textAlign: TextAlign.center,
+            style: TextStyle(fontWeight: FontWeight.bold),
+          ),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const Icon(
+                Icons.info_outline,
+                color: Colors.red,
+                size: 60,
+              ),
+              const SizedBox(height: 16),
+              Text(
+                "You've reached the maximum quantity for this item in your cart.",
+                textAlign: TextAlign.center,
+              ),
+            ],
+          ),
+          actions: [
+            Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                TextButton(
+                  onPressed: () {
+                    Navigator.of(context).pop(); // Tutup dialog
+                  },
+                  child: const Text(
+                    "OK",
+                    style: TextStyle(
+                      fontSize: 18, // <-- PERBESAR UKURAN FONT DI SINI
+                      fontWeight: FontWeight.bold, // Opsional: bisa ditambahkan agar lebih menonjol
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ],
+        );
+      },
+    );
   }
 
   void _showAddedToBagOverlay(int totalItems) {
@@ -170,17 +271,14 @@ class _ProductPageState extends State<ProductPage> {
       context: context,
       barrierDismissible: true,
       builder: (BuildContext context) {
-        // Use a Stack to overlay the checkmark and text
         return Stack(
           alignment: Alignment.center,
           children: [
-            // This is the semi-transparent background that dims the content behind
             Positioned.fill(
               child: Container(
-                color: Colors.black.withOpacity(0.5), // Adjust opacity as needed
+                color: Colors.black.withOpacity(0.5),
               ),
             ),
-            // The actual content of the dialog
             Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
@@ -195,7 +293,7 @@ class _ProductPageState extends State<ProductPage> {
                     children: [
                       const Icon(
                         Icons.check_circle,
-                        color: Colors.black, // Color of the checkmark
+                        color: Colors.black,
                         size: 80,
                       ),
                       const SizedBox(height: 16),
@@ -205,17 +303,16 @@ class _ProductPageState extends State<ProductPage> {
                       ),
                       const SizedBox(height: 4),
                       Text(
-                        // Pastikan ini menggunakan parameter totalItems yang diterima
                         "$totalItems Item(s) Total",
                         style: Theme.of(context).textTheme.bodyLarge?.copyWith(color: Colors.grey[700]),
                       ),
                     ],
                   ),
                 ),
-                const SizedBox(height: 24), // Space between the main dialog and the "Adding to Bag" text
+                const SizedBox(height: 24),
                 Text(
                   "Adding to Cart",
-                  style: Theme.of(context).textTheme.titleMedium?.copyWith(color: Colors.white), // Text color for the "Adding to Bag"
+                  style: Theme.of(context).textTheme.titleMedium?.copyWith(color: Colors.white),
                 ),
               ],
             ),
@@ -224,14 +321,11 @@ class _ProductPageState extends State<ProductPage> {
       },
     );
 
-    // Optionally, dismiss the dialog after a few seconds
     Future.delayed(const Duration(seconds: 2), () {
       Navigator.of(context).pop();
     });
   }
 
-
-  // Function to build star rating display
   List<Widget> buildStarRating(double rating, {double size = 20}) {
     int fullStars = rating.floor();
     bool hasHalfStar = (rating - fullStars) >= 0.5;
@@ -246,8 +340,9 @@ class _ProductPageState extends State<ProductPage> {
     ];
   }
 
-  // Modified function to display share sheet from top
-  void _showShareSheetFromTop(String productTitle, String productCategory) {
+  void _showShareSheetFromTop(String productTitle, String productCategory, String productId) {
+    final String productLink = 'https://your_app_domain.com/products/$productId?name=${Uri.encodeComponent(productTitle)}';
+
     showGeneralDialog(
       context: context,
       barrierDismissible: true,
@@ -272,8 +367,6 @@ class _ProductPageState extends State<ProductPage> {
               child: Material(
                 color: Colors.white,
                 borderRadius: const BorderRadius.only(
-                  topLeft: Radius.circular(0),
-                  topRight: Radius.circular(0),
                   bottomLeft: Radius.circular(24),
                   bottomRight: Radius.circular(24),
                 ),
@@ -290,7 +383,7 @@ class _ProductPageState extends State<ProductPage> {
                           height: 4,
                           margin: const EdgeInsets.only(bottom: 8),
                           decoration: BoxDecoration(
-                            color: Colors.grey[400], // Changed color from white to be visible
+                            color: Colors.grey[400],
                             borderRadius: BorderRadius.circular(2),
                           ),
                         ),
@@ -315,16 +408,52 @@ class _ProductPageState extends State<ProductPage> {
                       leading: const Icon(Icons.message),
                       title: const Text('Message'),
                       trailing: const Icon(Icons.arrow_forward_ios),
+                      onTap: () async {
+                        Navigator.pop(context);
+                        final Uri smsLaunchUri = Uri(
+                          scheme: 'sms',
+                          queryParameters: <String, String>{
+                            'body': productLink,
+                          },
+                        );
+
+                        if (await canLaunchUrl(smsLaunchUri)) {
+                          await launchUrl(smsLaunchUri);
+                        } else {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(content: Text('Could not launch messaging app.')),
+                          );
+                        }
+                      },
+                    ),
+                    ListTile(
+                      leading: const Icon(Icons.copy),
+                      title: const Text('Copy Link'),
+                      trailing: const Icon(Icons.arrow_forward_ios),
                       onTap: () {
                         Navigator.pop(context);
+                        // TODO: Implement actual copy to clipboard using 'package:flutter/services.dart'
+                        // import 'package:flutter/services.dart';
+                        // Clipboard.setData(ClipboardData(text: productLink));
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(content: Text('Link copied to clipboard')),
+                        );
+                        print('Link copied (simulasi): $productLink');
                       },
                     ),
                     ListTile(
                       leading: const Icon(Icons.more_horiz),
                       title: const Text('Other'),
                       trailing: const Icon(Icons.arrow_forward_ios),
-                      onTap: () {
+                      onTap: () async {
                         Navigator.pop(context);
+                        // TODO: Implement actual share using 'package:share_plus'
+                        // import 'package:share_plus/share_plus.dart';
+                        // Share.share(productLink, subject: productTitle);
+                        print('Trying to share via other apps (simulasi): $productLink');
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(content: Text('Opening share options (simulasi)...')),
+                        );
                       },
                     ),
                   ],
@@ -339,9 +468,18 @@ class _ProductPageState extends State<ProductPage> {
 
   @override
   Widget build(BuildContext context) {
-    if (isLoading) {
-      return const Scaffold(
-        body: Center(child: CircularProgressIndicator()),
+    if (isLoading || _currentUserId == null) {
+      return Scaffold(
+        body: Center(
+          child: _currentUserId == null
+              ? const Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Text('Please log in to view product details and use favorites.', textAlign: TextAlign.center,),
+            ],
+          )
+              : const CircularProgressIndicator(),
+        ),
       );
     }
 
@@ -361,7 +499,7 @@ class _ProductPageState extends State<ProductPage> {
         foregroundColor: Colors.black,
         actions: [
           IconButton(
-            onPressed: () => _showShareSheetFromTop(product!.name, product!.category),
+            onPressed: () => _showShareSheetFromTop(product!.name, product!.category, product!.id.toString()),
             icon: const Icon(Icons.share),
           ),
         ],
@@ -370,7 +508,6 @@ class _ProductPageState extends State<ProductPage> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Product Image
             SizedBox(
               height: 350,
               child: Image.network(
@@ -384,7 +521,6 @@ class _ProductPageState extends State<ProductPage> {
             ),
             const SizedBox(height: 20),
 
-            // Product Name
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 16.0),
               child: Text(
@@ -395,7 +531,6 @@ class _ProductPageState extends State<ProductPage> {
               ),
             ),
 
-            // Category
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 16.0),
               child: Text(
@@ -407,7 +542,6 @@ class _ProductPageState extends State<ProductPage> {
             ),
             const SizedBox(height: 8),
 
-            // Price
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 16.0),
               child: Text(
@@ -421,12 +555,10 @@ class _ProductPageState extends State<ProductPage> {
             ),
             const SizedBox(height: 16),
 
-            // Action Buttons
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 16.0),
               child: Row(
                 children: [
-                  // Select Size Button
                   Expanded(
                     child: OutlinedButton(
                       onPressed: () {
@@ -458,44 +590,74 @@ class _ProductPageState extends State<ProductPage> {
                   ),
                   const SizedBox(width: 8),
 
-                  // Add to Bag Button
                   Expanded(
                     child: ElevatedButton(
-                      onPressed: () async {
-                        int? userId = await getUserId();
-                        if (userId == null) {
+                      // Nonaktifkan tombol saat _isAddingToCart true
+                      onPressed: _isAddingToCart ? null : () async {
+                        if (_currentUserId == null) {
                           ScaffoldMessenger.of(context).showSnackBar(
-                            const SnackBar(content: Text('Silakan login terlebih dahulu')),
+                            const SnackBar(content: Text('Please log in to add to cart.')),
                           );
                           return;
                         }
-                        await addToCart(userId, product!.id!);
+                        await addToCart(_currentUserId!, product!.id!);
                       },
                       style: ElevatedButton.styleFrom(
                         backgroundColor: Colors.blueAccent,
                         foregroundColor: Colors.white,
                         padding: const EdgeInsets.symmetric(vertical: 16),
                       ),
-                      child: const Text("Add to Cart"),
+                      child: _isAddingToCart
+                          ? const SizedBox(
+                        width: 20,
+                        height: 20,
+                        child: CircularProgressIndicator(
+                          strokeWidth: 2,
+                          valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                        ),
+                      )
+                          : const Text("Add to Cart"),
                     ),
                   ),
                   const SizedBox(width: 8),
 
-                  // Favorite Button
                   Expanded(
                     child: OutlinedButton(
-                      onPressed: () {
-                        setState(() {
-                          _isFavorited = !_isFavorited;
-                        });
+                      onPressed: () async {
+                        if (product != null && _currentUserId != null) {
+                          bool newFavoriteStatus = await _favoriteService.toggleFavorite(_currentUserId!, product!);
+                          setState(() {
+                            _isFavorited = newFavoriteStatus;
+                          });
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(
+                              content: Text(
+                                _isFavorited ? '${product!.name} added to favorites!' : '${product!.name} removed from favorites!',
+                              ),
+                            ),
+                          );
+                        } else if (_currentUserId == null) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(content: Text('Please log in to add to favorites.')),
+                          );
+                        }
                       },
                       style: OutlinedButton.styleFrom(
                         foregroundColor: Colors.black,
                         side: const BorderSide(color: Colors.blueAccent),
                         padding: const EdgeInsets.symmetric(vertical: 16),
                       ),
-                      child:
-                      Text(_isFavorited ? "Favorited ❤" : "Favorite"),
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Icon(
+                            _isFavorited ? Icons.favorite : Icons.favorite_border,
+                            color: _isFavorited ? Colors.red : Colors.blueAccent,
+                          ),
+                          const SizedBox(width: 4),
+                          Text(_isFavorited ? "Favorited" : "Favorite"),
+                        ],
+                      ),
                     ),
                   ),
                 ],
@@ -503,7 +665,6 @@ class _ProductPageState extends State<ProductPage> {
             ),
             const SizedBox(height: 16),
 
-            // Product Info and Description (from Code 2)
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 16.0),
               child: Text(
@@ -529,7 +690,6 @@ class _ProductPageState extends State<ProductPage> {
             ),
             const SizedBox(height: 16),
 
-            // Link to product details (if more details exist)
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 16.0),
               child: InkWell(
@@ -547,7 +707,6 @@ class _ProductPageState extends State<ProductPage> {
               ),
             ),
 
-            // Review Section
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 16.0),
               child: Theme(

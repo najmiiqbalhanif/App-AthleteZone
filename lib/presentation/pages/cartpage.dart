@@ -178,187 +178,243 @@ class _CartPageState extends State<CartPage> {
     );
   }
 
+  // Fungsi baru untuk menampilkan pemilih kuantitas
+  Future<int?> _showQuantityPicker(BuildContext context, int currentQuantity) async {
+    final double itemHeight = 50; // Sesuaikan dengan itemExtent di ListWheelScrollView
+
+    final FixedExtentScrollController scrollController =
+    FixedExtentScrollController(initialItem: currentQuantity - 1);
+    int selectedQuantity = currentQuantity; // Inisialisasi selectedQuantity
+
+    return await showModalBottomSheet<int>(
+      context: context,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+      ),
+      builder: (BuildContext context) {
+        // Menggunakan StatefulBuilder untuk mengelola state lokal dari ListWheelScrollView
+        return StatefulBuilder(
+          builder: (BuildContext context, StateSetter setStateInner) {
+            return Container(
+              height: MediaQuery.of(context).size.height * 0.45,
+              padding: const EdgeInsets.all(16.0),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Container(
+                    width: 40,
+                    height: 5,
+                    decoration: BoxDecoration(
+                      color: Colors.grey[300],
+                      borderRadius: BorderRadius.circular(2.5),
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                  ListTile(
+                    title: Text(
+                      "Remove",
+                      style: TextStyle(color: Colors.red[700], fontSize: 18),
+                      textAlign: TextAlign.center,
+                    ),
+                    onTap: () {
+                      Navigator.pop(context, 0);
+                    },
+                  ),
+                  const Divider(),
+                  Expanded(
+                    child: Stack(
+                      alignment: Alignment.center,
+                      children: [
+                        // Garis indikator abu-abu terang di tengah, membingkai angka
+                        Positioned.fill(
+                          child: Align(
+                            alignment: Alignment.center,
+                            child: Container(
+                              height: itemHeight, // Tinggi garis sama dengan tinggi item
+                              decoration: BoxDecoration(
+                                color: Colors.grey[200], // Warna abu-abu terang
+                                borderRadius: BorderRadius.circular(8), // Sudut melengkung
+                              ),
+                            ),
+                          ),
+                        ),
+                        ListWheelScrollView.useDelegate(
+                          controller: scrollController,
+                          itemExtent: itemHeight, // Tinggi setiap item dalam list
+                          perspective: 0.003,
+                          diameterRatio: 1.5,
+                          physics: const FixedExtentScrollPhysics(),
+                          onSelectedItemChanged: (index) {
+                            // Perbarui selectedQuantity dan rebuild StatefulBuilder
+                            setStateInner(() {
+                              selectedQuantity = index + 1;
+                            });
+                          },
+                          childDelegate: ListWheelChildBuilderDelegate(
+                            builder: (BuildContext context, int index) {
+                              final int qty = index + 1;
+                              // Tentukan apakah item ini adalah yang sedang dipilih (berada di tengah)
+                              final bool isSelected = (qty == selectedQuantity);
+
+                              return Center(
+                                child: Text(
+                                  '$qty',
+                                  style: TextStyle(
+                                    fontSize: 24,
+                                    fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+                                    color: isSelected ? Colors.blueAccent : Colors.grey[700], // Perubahan warna di sini
+                                  ),
+                                ),
+                              );
+                            },
+                            childCount: 10,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                  SizedBox(
+                    width: double.infinity,
+                    child: ElevatedButton(
+                      onPressed: () {
+                        Navigator.pop(context, selectedQuantity);
+                      },
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: const Color(0xFF041761),
+                        padding: const EdgeInsets.symmetric(vertical: 12),
+                      ),
+                      child: const Text(
+                        'Done',
+                        style: TextStyle(color: Colors.white, fontSize: 16),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            );
+          },
+        );
+      },
+    );
+  }
+
   Widget _buildCartItem(BuildContext context, CartItem cartItem, int userId) {
     final cartProvider = Provider.of<CartProvider>(context, listen: false);
 
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 8.0),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          // Gambar dan "Just a few left" serta Qty di kolom terpisah agar Qty bisa sejajar gambar
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Container(
-                width: 100,
-                height: 100,
-                decoration: BoxDecoration(
-                  borderRadius: BorderRadius.circular(8),
-                  image: DecorationImage(
-                    image: NetworkImage(cartItem.product.photoUrl),
-                    fit: BoxFit.cover,
-                  ),
-                ),
-              ),
-              const SizedBox(height: 8), // Spacer between image and Qty/stock
-              // START Custom Quantity Dropdown
-              GestureDetector(
-                onTap: () async {
-                  final int? selectedQuantity = await showModalBottomSheet<int>(
-                    context: context,
-                    builder: (BuildContext context) {
-                      return Container(
-                        padding: const EdgeInsets.all(16.0),
-                        child: Column(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            Container(
-                              width: 40,
-                              height: 5,
-                              decoration: BoxDecoration(
-                                color: Colors.grey[300],
-                                borderRadius: BorderRadius.circular(2.5),
-                              ),
-                            ),
-                            const SizedBox(height: 16),
-                            // "Remove" option
-                            ListTile(
-                              title: Text(
-                                "Remove",
-                                style: TextStyle(color: Colors.red[700], fontSize: 18),
-                                textAlign: TextAlign.center,
-                              ),
-                              onTap: () => Navigator.pop(context, 0), // Return 0 for remove
-                            ),
-                            const Divider(),
-                            Expanded(
-                              child: ListView.builder(
-                                shrinkWrap: true,
-                                itemCount: 100, // Quantity options from 1 to 100
-                                itemBuilder: (context, index) {
-                                  final int qty = index + 1;
-                                  return ListTile(
-                                    title: Text(
-                                      "$qty",
-                                      style: TextStyle(
-                                        fontSize: 18,
-                                        fontWeight: cartItem.quantity == qty ? FontWeight.bold : FontWeight.normal,
-                                        color: cartItem.quantity == qty ? Colors.blue[900] : Colors.black,
-                                      ),
-                                      textAlign: TextAlign.center,
-                                    ),
-                                    onTap: () => Navigator.pop(context, qty),
-                                  );
-                                },
-                              ),
-                            ),
-                            const SizedBox(height: 16),
-                            SizedBox(
-                              width: double.infinity,
-                              child: ElevatedButton(
-                                onPressed: () {
-                                  Navigator.pop(context); // Close the bottom sheet without selecting
-                                },
-                                style: ElevatedButton.styleFrom(
-                                  backgroundColor: const Color(0xFF041761),
-                                  padding: const EdgeInsets.symmetric(vertical: 12),
-                                ),
-                                child: const Text(
-                                  'Done',
-                                  style: TextStyle(color: Colors.white, fontSize: 16),
-                                ),
-                              ),
-                            ),
-                          ],
-                        ),
-                      );
-                    },
-                  );
-
-                  if (selectedQuantity != null) {
-                    if (selectedQuantity == 0) {
-                      try {
-                        await _cartService.removeProductFromCart(userId, cartItem.product.id!);
-                        cartProvider.removeItem(cartItem.product);
-                      } catch (e) {
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          SnackBar(content: Text('Failed to remove item: ${e.toString()}')),
-                        );
-                      }
-                    } else {
-                      try {
-                        await _cartService.updateProductQuantity(userId, cartItem.product.id!, selectedQuantity);
-                        cartProvider.updateQuantity(cartItem.product, selectedQuantity);
-                      } catch (e) {
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          SnackBar(content: Text('Failed to update quantity: ${e.toString()}')),
-                        );
-                      }
-                    }
-                  }
-                },
-                // Hapus decoration untuk menghilangkan border
-                child: Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 0, vertical: 0), // Hapus padding horizontal/vertical
-                  // decoration: BoxDecoration( // Hapus atau komen bagian decoration ini
-                  //   border: Border.all(color: Colors.grey.shade400),
-                  //   borderRadius: BorderRadius.circular(8),
-                  //   color: Colors.white,
-                  // ),
-                  child: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Text(
-                        'Qty ${cartItem.quantity}',
-                        style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w500),
-                      ),
-                      const SizedBox(width: 4), // Kurangi sedikit jarak
-                      const Icon(Icons.keyboard_arrow_down, size: 20),
-                    ],
-                  ),
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(width: 16), // Jarak antara kolom gambar/qty dan kolom detail produk
-          Expanded(
-            child: Column(
+      child: IntrinsicHeight( // Tambahkan IntrinsicHeight agar Column anak bisa mengisi tinggi penuh
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.stretch, // Agar anak Column memenuhi tinggi Row
+          children: [
+            // Kolom Kiri: Gambar dan Qty Selector
+            Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(
-                  cartItem.product.name,
-                  style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                    fontWeight: FontWeight.bold,
-                  ),
-                  maxLines: 2,
-                  overflow: TextOverflow.ellipsis,
-                ),
-                const SizedBox(height: 4),
-                Text(
-                  cartItem.product.category,
-                  style: TextStyle(
-                    color: Colors.grey[600],
-                    fontSize: 14,
+                Container(
+                  width: 100,
+                  height: 100,
+                  decoration: BoxDecoration(
+                    borderRadius: BorderRadius.circular(8),
+                    image: DecorationImage(
+                      image: NetworkImage(cartItem.product.photoUrl),
+                      fit: BoxFit.cover,
+                    ),
                   ),
                 ),
                 const SizedBox(height: 8),
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.end,
-                  crossAxisAlignment: CrossAxisAlignment.end,
-                  children: [
-                    Text(
+                GestureDetector(
+                  onTap: () async {
+                    final int? selectedQuantity = await _showQuantityPicker(context, cartItem.quantity);
+
+                    if (selectedQuantity != null) {
+                      if (selectedQuantity == 0) {
+                        try {
+                          await _cartService.removeProductFromCart(userId, cartItem.product.id!);
+                          cartProvider.removeItem(cartItem.product);
+                        } catch (e) {
+                          if (mounted) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(content: Text('Failed to remove item: ${e.toString()}')),
+                            );
+                          }
+                        }
+                      } else if (selectedQuantity != cartItem.quantity) {
+                        try {
+                          await _cartService.updateProductQuantity(userId, cartItem.product.id!, selectedQuantity);
+                          cartProvider.updateQuantity(cartItem.product, selectedQuantity);
+                        } catch (e) {
+                          if (mounted) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(content: Text('Failed to update quantity: ${e.toString()}')),
+                            );
+                          }
+                        }
+                      }
+                    }
+                  },
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 0, vertical: 0),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Text(
+                          'Qty ${cartItem.quantity}',
+                          style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w500),
+                        ),
+                        const SizedBox(width: 4),
+                        const Icon(Icons.keyboard_arrow_down, size: 20),
+                      ],
+                    ),
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(width: 16),
+            // Kolom Kanan: Detail Produk (Nama, Kategori, Harga)
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start, // Sejajarkan teks ke kiri
+                mainAxisAlignment: MainAxisAlignment.spaceBetween, // Dorong elemen ke atas dan bawah
+                children: [
+                  // Bagian atas: Nama dan Kategori
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        cartItem.product.name,
+                        style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                          fontWeight: FontWeight.bold,
+                        ),
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        cartItem.product.category,
+                        style: TextStyle(
+                          color: Colors.grey[600],
+                          fontSize: 14,
+                        ),
+                      ),
+                    ],
+                  ),
+                  // Bagian bawah: Harga
+                  Align( // Gunakan Align untuk menempatkan harga di kanan bawah
+                    alignment: Alignment.bottomRight,
+                    child: Text(
                       "Rp ${cartItem.totalPrice.toStringAsFixed(0).replaceAllMapped(RegExp(r'(\d{1,3})(?=(\d{3})+(?!\d))'),(match) => '${match[1]}.',)}",
                       style: Theme.of(context).textTheme.bodyLarge?.copyWith(
                         fontWeight: FontWeight.bold,
                       ),
                     ),
-                  ],
-                ),
-              ],
+                  ),
+                ],
+              ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }

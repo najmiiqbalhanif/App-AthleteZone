@@ -6,8 +6,8 @@ import 'productPageDetail.dart';
 import '../../models/Product.dart';
 import '../../services/ProductService.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:provider/provider.dart'; // Tambahkan ini
-import 'package:helloworld/presentation/pages/cart_provider.dart'; // Tambahkan ini (sesuaikan path jika berbeda)
+import 'package:provider/provider.dart';
+import 'package:helloworld/presentation/pages/cart_provider.dart'; // Sesuaikan path ini
 
 // Fungsi async untuk dapatkan userId dari SharedPreferences
 Future<int?> getUserId() async {
@@ -142,16 +142,16 @@ class _ProductPageState extends State<ProductPage> {
       final response = await http.post(url);
 
       if (response.statusCode == 200) {
-        // --- BARU: Perbarui CartProvider setelah sukses di backend ---
-        // Dapatkan instance CartProvider. listen: false karena kita hanya memanggil metode.
         final cartProvider = Provider.of<CartProvider>(context, listen: false);
 
-        // Panggil metode di CartProvider untuk menambahkan/memperbarui item secara lokal
-        // Asumsi product adalah product! yang sedang ditampilkan di halaman ini
-        // Asumsi kuantitas yang ditambahkan adalah 1 (sesuaikan jika ada pilihan kuantitas di ProductPage)
-        cartProvider.addExistingItem(product!, 1); // Menggunakan product! dan kuantitas 1
+        // Asumsi kuantitas yang ditambahkan adalah 1.
+        // Jika Anda memiliki mekanisme pemilihan kuantitas di ProductPage,
+        // gunakan kuantitas tersebut (misal: _selectedQuantity).
+        cartProvider.addExistingItem(product!, 1);
 
-        _showAddedToBagOverlay(cartProvider.items.length); // Tampilkan total item dari provider
+        // --- UBAH BARIS INI ---
+        _showAddedToBagOverlay(cartProvider.totalItems); // Gunakan getter totalQuantity
+        // ---------------------
 
       } else {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -205,6 +205,7 @@ class _ProductPageState extends State<ProductPage> {
                       ),
                       const SizedBox(height: 4),
                       Text(
+                        // Pastikan ini menggunakan parameter totalItems yang diterima
                         "$totalItems Item(s) Total",
                         style: Theme.of(context).textTheme.bodyLarge?.copyWith(color: Colors.grey[700]),
                       ),

@@ -79,7 +79,8 @@ class _HomePageState extends State<HomePage> {
               ),
               const SizedBox(height: 16),
               SizedBox(
-                height: 150,
+                // Anda mungkin perlu menyesuaikan height dari SizedBox ini juga jika gambar menjadi lebih tinggi
+                height: 190, // Disesuaikan untuk menampung gambar yang lebih tinggi
                 child: _isLoading
                     ? const Center(child: CircularProgressIndicator())
                     : SingleChildScrollView(
@@ -189,7 +190,7 @@ class ProductCard extends StatelessWidget {
               child:Image.network(
                 imageUrl,
                 width: 150,
-                height: 80,
+                height: 120, // **Ubah nilai height di sini dari 80 menjadi 120**
                 fit: BoxFit.cover,
                 errorBuilder: (context, error, stackTrace) {
                   return const Icon(Icons.broken_image, size: 150);
